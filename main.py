@@ -39,7 +39,7 @@ class Student:
 
     def get_details(self) -> str:
         pass  # TODO: Return a formatted string with student details
-        return f"Name: {self.name}, Student ID: {self.__student_id}, Average Grade: {self.calculate_average()}
+        return f"Name: {self.name}, Student ID: {self.__student_id}, Average Grade: {self.calculate_average()}"
 
 student1 = Student("Alice Johnson", "S12345")
 student1.add_grade(85)
