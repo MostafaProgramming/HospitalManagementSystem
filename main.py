@@ -38,11 +38,10 @@ class GradeTracker:
     def __init__(self):
         self.students = {}
 
-    def add_student(self, name, student_id, honours=False):
+    def add_student(self, name, student_id, Surname, Birthyear, honours=False):
         """Adds a student to the tracker."""
         if honours:
             student = HonoursStudent(name, student_id, Surname, Birthyear)
-            #student = HonoursStudent(name, student_id,)
         else:
             student = Student(name, student_id, Surname, Birthyear)
         self.students[student_id] = student
@@ -75,14 +74,28 @@ def main():
         print("4. Exit")
 
         choice = input("Enter your choice: ")
-
+        print("")
         if choice == "1":
             name = input("Enter student name: ")
+            while len(name) > 30 and len(name) < 1:
+                print("Invalid name. Please enter a valid name.")
+                name = input("Enter student name: ")
+
             Surname = input("Enter student Surname: ")
-            Birthyear = input("Enter student Birthyear: ")
-            student_id = input("Enter student ID: ")
+            while len(Surname) > 30 and len(Surname) < 1:
+                print("Invalid name. Please enter a valid name.")
+                Surname = input("Enter student Surname: ")
+                
+            Birthyear = (input("Enter student Birthyear: "))
+            while not Birthyear.isdigit():
+                print("Invalid input. Please enter a valid number")
+                Birthyear = (input("Enter student Birthyear: "))
+                
             honours = input("Is this an honours student? (yes/no): ").lower() == "yes"
-            tracker.add_student(name, student_id, honours)
+            
+            student_id = name[0:3] + Surname[0:3] + str(Birthyear)
+            tracker.add_student(name, student_id, Surname, Birthyear, honours)
+            print(name,"'s ID is ", student_id)
 
         elif choice == "2":
             student_id = input("Enter student ID: ")
