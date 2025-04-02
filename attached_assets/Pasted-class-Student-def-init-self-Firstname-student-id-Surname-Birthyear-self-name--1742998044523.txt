@@ -65,8 +65,8 @@ class GradeTracker:
 # CLI Interface
 def main():
     tracker = GradeTracker()
-    # Main options menu for user input
-    while True:  
+
+    while True:
         print("\nStudent Grade Tracker Menu:")
         print("1. Add Student")
         print("2. Enter Grades")
