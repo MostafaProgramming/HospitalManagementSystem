@@ -100,13 +100,19 @@ def main():
             print(name,"'s ID is ", student_id)
 
         elif choice == "2":
-            student_id = input("Enter student ID: ")
-            grades = list(map(int, input("Enter grades separated by spaces: ").split()))
-            tracker.enter_grades(student_id, grades)
+            if not tracker.students:
+                print("No students added yet. Please add a student first. ")
+            else:
+                student_id = input("Enter student ID: ")
+                grades = list(map(int, input("Enter grades separated by spaces: ").split()))
+                tracker.enter_grades(student_id, grades)
 
         elif choice == "3":
-            print("\nStudent Reports:")
-            tracker.generate_reports()
+            if not tracker.students:
+                print("No students added yet. Please add a student first.  ")
+            else:
+                print("\nStudent Reports:")
+                tracker.generate_reports()
 
         elif choice == "4":
             print("Exiting the system. Goodbye!")
