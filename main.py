@@ -67,7 +67,7 @@ def main():
     tracker = GradeTracker()
     # Main options menu for user input
     while True:  
-        print("\nStudent Grade Tracker Menu:")
+        print("\n Welcome to the Student Grade Tracker Menu:")
         print("1. Add Student")
         print("2. Enter Grades")
         print("3. View Reports")
@@ -76,13 +76,13 @@ def main():
         choice = input("Enter your choice: ")
         print("")
         if choice == "1":
-            name = input("Enter student name: ")
+            name = str(input("Enter student name: "))
             while len(name) > 30 or len(name) < 1:
                 print("Invalid name. Please enter a valid name between 1-30 letters.")
                 print("")
                 name = input("Enter student name: ")
 
-            Surname = input("Enter student Surname: ")
+            Surname = str(input("Enter student Surname: "))
             while len(Surname) > 30 or len(Surname) < 1:
                 print("Invalid surname. Please enter a valid surname between 1-30 letters.")
                 print("")
@@ -93,7 +93,11 @@ def main():
                 print("Invalid input. Please enter a valid number")
                 Birthyear = (input("Enter student Birthyear: "))
                 
-            honours = input("Is this an honours student? (yes/no): ").lower() == "yes"
+            honours = input("Is this an honours student? ([y]es/[n]o): ")
+            while honours.lower() != "y" and honours.lower() != "n":
+                print("invalid. Please enter either [y]es or [n]o. ")
+                honours = input("Is this an honours student? (yes/no): ")
+             
             
             student_id = name[0:3] + Surname[0:3] + str(Birthyear)
             tracker.add_student(name, student_id, Surname, Birthyear, honours)
@@ -110,9 +114,13 @@ def main():
         elif choice == "3":
             if not tracker.students:
                 print("No students added yet. Please add a student first.  ")
-            else:
-                print("\nStudent Reports:")
-                tracker.generate_reports()
+            else: # Check if any student has grades
+                has_grades = any(len(student._grades) > 0 for student in tracker.students.values())
+                if not has_grades:
+                    print("No grades entered yet. Please enter grades first.  ")
+                else:
+                    print("\nStudent Reports:")
+                    tracker.generate_reports()
 
         elif choice == "4":
             print("Exiting the system. Goodbye!")
