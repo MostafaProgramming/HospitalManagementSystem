@@ -66,12 +66,15 @@ class GradeTracker:
 def main():
     tracker = GradeTracker()
     # Main options menu for user input
-    while True:  
-        print("\n Welcome to the Student Grade Tracker Menu:")
+    while True:
+        print("\n" + "="*40)
+        print("   Student Grade Tracker System")
+        print("="*40)
         print("1. Add Student")
         print("2. Enter Grades")
         print("3. View Reports")
         print("4. Exit")
+        print("-"*40)
 
         choice = input("Enter your choice: ")
         print("")
