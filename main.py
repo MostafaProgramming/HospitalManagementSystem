@@ -1,141 +1,162 @@
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+
 class Student:
     def __init__(self, Firstname, student_id, Surname, Birthyear):
         self.name = Firstname
         self.student_id = student_id
-        self._grades = []  # Private attribute for encapsulation
+        self._grades = []
         self.surname = Surname
         self.birthyear = Birthyear
 
     def add_grade(self, grade):
-        """Adds a new grade to the student."""
         self._grades.append(grade)
 
     def calculate_average(self):
-        """Calculates the average grade."""
         if len(self._grades) == 0:
             return 0
         return sum(self._grades) / len(self._grades)
 
     def determine_pass_fail(self):
-        """Determines pass/fail based on a 50% pass mark."""
         return self.calculate_average() >= 50
 
     def get_report(self):
-        """Generates and returns a student report."""
         return (f"Student: {self.name} (ID: {self.student_id})\n"
                 f"Grades: {self._grades}\n"
                 f"Average: {self.calculate_average():.2f}\n"
                 f"Status: {'Pass' if self.determine_pass_fail() else 'Fail'}\n")
 
-
 class HonoursStudent(Student):
     def determine_pass_fail(self):
-        """Honours students require at least 70% to pass."""
         return self.calculate_average() >= 70
 
+class GradeTrackerGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Student Grade Tracker")
+        self.tracker = GradeTracker()
+        
+        # Create main frame
+        self.main_frame = ttk.Frame(root, padding="10")
+        self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Create and pack widgets
+        ttk.Label(self.main_frame, text="Student Grade Tracker System", font=('Helvetica', 16, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
+        
+        ttk.Button(self.main_frame, text="Add New Student", command=self.show_add_student).grid(row=1, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        ttk.Button(self.main_frame, text="Enter Grades", command=self.show_enter_grades).grid(row=2, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        ttk.Button(self.main_frame, text="View Reports", command=self.show_reports).grid(row=3, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        
+    def show_add_student(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Add New Student")
+        dialog.geometry("300x250")
+        
+        ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5)
+        name_entry = ttk.Entry(dialog)
+        name_entry.grid(row=0, column=1, pady=5, padx=5)
+        
+        ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)
+        surname_entry = ttk.Entry(dialog)
+        surname_entry.grid(row=1, column=1, pady=5, padx=5)
+        
+        ttk.Label(dialog, text="Birth Year:").grid(row=2, column=0, pady=5, padx=5)
+        birth_year_entry = ttk.Entry(dialog)
+        birth_year_entry.grid(row=2, column=1, pady=5, padx=5)
+        
+        honours_var = tk.BooleanVar()
+        ttk.Checkbutton(dialog, text="Honours Student", variable=honours_var).grid(row=3, column=0, columnspan=2, pady=5)
+        
+        def submit():
+            name = name_entry.get().strip()
+            surname = surname_entry.get().strip()
+            birth_year = birth_year_entry.get().strip()
+            
+            if not all([name, surname, birth_year]):
+                messagebox.showerror("Error", "All fields are required!")
+                return
+                
+            student_id = name[0:3] + surname[0:3] + birth_year
+            self.tracker.add_student(name, student_id, surname, birth_year, honours_var.get())
+            messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
+            dialog.destroy()
+            
+        ttk.Button(dialog, text="Add Student", command=submit).grid(row=4, column=0, columnspan=2, pady=10)
+        
+    def show_enter_grades(self):
+        if not self.tracker.students:
+            messagebox.showwarning("Warning", "No students added yet!")
+            return
+            
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Enter Grades")
+        dialog.geometry("300x150")
+        
+        ttk.Label(dialog, text="Student ID:").grid(row=0, column=0, pady=5, padx=5)
+        id_entry = ttk.Entry(dialog)
+        id_entry.grid(row=0, column=1, pady=5, padx=5)
+        
+        ttk.Label(dialog, text="Grades (space-separated):").grid(row=1, column=0, pady=5, padx=5)
+        grades_entry = ttk.Entry(dialog)
+        grades_entry.grid(row=1, column=1, pady=5, padx=5)
+        
+        def submit():
+            student_id = id_entry.get().strip()
+            try:
+                grades = list(map(int, grades_entry.get().split()))
+                self.tracker.enter_grades(student_id, grades)
+                messagebox.showinfo("Success", "Grades added successfully!")
+                dialog.destroy()
+            except ValueError:
+                messagebox.showerror("Error", "Invalid grades format!")
+                
+        ttk.Button(dialog, text="Submit Grades", command=submit).grid(row=2, column=0, columnspan=2, pady=10)
+        
+    def show_reports(self):
+        if not self.tracker.students:
+            messagebox.showwarning("Warning", "No students added yet!")
+            return
+            
+        has_grades = any(len(student._grades) > 0 for student in self.tracker.students.values())
+        if not has_grades:
+            messagebox.showwarning("Warning", "No grades entered yet!")
+            return
+            
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Student Reports")
+        dialog.geometry("400x300")
+        
+        text_widget = tk.Text(dialog, wrap=tk.WORD, width=40, height=15)
+        text_widget.grid(row=0, column=0, padx=10, pady=10)
+        
+        scrollbar = ttk.Scrollbar(dialog, orient=tk.VERTICAL, command=text_widget.yview)
+        scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        text_widget.configure(yscrollcommand=scrollbar.set)
+        
+        for student in self.tracker.students.values():
+            text_widget.insert(tk.END, student.get_report() + "\n")
+        text_widget.configure(state='disabled')
 
 class GradeTracker:
     def __init__(self):
         self.students = {}
 
     def add_student(self, name, student_id, Surname, Birthyear, honours=False):
-        """Adds a student to the tracker."""
         if honours:
             student = HonoursStudent(name, student_id, Surname, Birthyear)
         else:
             student = Student(name, student_id, Surname, Birthyear)
         self.students[student_id] = student
-        print(f"Student '{name}' added successfully!")
 
     def enter_grades(self, student_id, grades):
-        """Adds grades to a student."""
         if student_id in self.students:
             for grade in grades:
                 self.students[student_id].add_grade(grade)
-            print(f"Grades {grades} added for {self.students[student_id].name}.")
         else:
-            print("Student ID not found!")
+            messagebox.showerror("Error", "Student ID not found!")
 
-    def generate_reports(self):
-        """Prints all student reports."""
-        for student in self.students.values():
-            print(student.get_report())
-
-
-# CLI Interface
-def main():
-    tracker = GradeTracker()
-    # Main options menu for user input
-    while True:
-        print("""
-╔══════════════════════════════════════════╗
-║         Student Grade Tracker            ║
-║            Management System             ║
-╠══════════════════════════════════════════╣
-║                                          ║
-║    1. Add New Student                    ║
-║    2. Enter Student Grades               ║
-║    3. View Student Reports               ║
-║    4. Exit System                        ║
-║                                          ║
-╚══════════════════════════════════════════╝
-""")
-        choice = input("➜ Please enter your choice (1-4): ")
-        print("")
-        if choice == "1":
-            name = str(input("Enter student name: "))
-            while len(name) > 30 or len(name) < 1:
-                print("Invalid name. Please enter a valid name between 1-30 letters.")
-                print("")
-                name = input("Enter student name: ")
-
-            Surname = str(input("Enter student Surname: "))
-            while len(Surname) > 30 or len(Surname) < 1:
-                print("Invalid surname. Please enter a valid surname between 1-30 letters.")
-                print("")
-                Surname = input("Enter student surname: ")
-                
-            Birthyear = (input("Enter student Birthyear: "))
-            while not Birthyear.isdigit():
-                print("Invalid input. Please enter a valid number")
-                Birthyear = (input("Enter student Birthyear: "))
-                
-            honours = input("Is this an honours student? ([y]es/[n]o): ")
-            while honours.lower() != "y" and honours.lower() != "n":
-                print("invalid. Please enter either [y]es or [n]o. ")
-                honours = input("Is this an honours student? (yes/no): ")
-             
-            
-            student_id = name[0:3] + Surname[0:3] + str(Birthyear)
-            tracker.add_student(name, student_id, Surname, Birthyear, honours)
-            print(name,"'s ID is ", student_id)
-
-        elif choice == "2":
-            if not tracker.students:
-                print("No students added yet. Please add a student first. ")
-            else:
-                student_id = input("Enter student ID: ")
-                grades = list(map(int, input("Enter grades separated by spaces: ").split()))
-                tracker.enter_grades(student_id, grades)
-
-        elif choice == "3":
-            if not tracker.students:
-                print("No students added yet. Please add a student first.  ")
-            else: # Check if any student has grades
-                has_grades = any(len(student._grades) > 0 for student in tracker.students.values())
-                if not has_grades:
-                    print("No grades entered yet. Please enter grades first.  ")
-                else:
-                    print("\nStudent Reports:")
-                    tracker.generate_reports()
-
-        elif choice == "4":
-            print("Exiting the system. Goodbye!")
-            break
-
-        else:
-            print("Invalid choice! Please enter a valid option.")
-
-# Run the program
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = GradeTrackerGUI(root)
+    root.mainloop()
