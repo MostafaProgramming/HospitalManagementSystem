@@ -96,14 +96,18 @@ class GradeTrackerGUI:
         id_entry = ttk.Entry(dialog)
         id_entry.grid(row=0, column=1, pady=5, padx=5)
         
-        ttk.Label(dialog, text="Grades (space-separated):").grid(row=1, column=0, pady=5, padx=5)
-        grades_entry = ttk.Entry(dialog)
-        grades_entry.grid(row=1, column=1, pady=5, padx=5)
+        ttk.Label(dialog, text="Grades (space-separated):").grid(row=1, column=0, pady=5, padx=5, sticky='n')
+        grades_entry = tk.Text(dialog, height=4, width=20, wrap=tk.WORD)
+        grades_entry.grid(row=1, column=1, pady=5, padx=5, sticky='nsew')
+        
+        # Configure grid weights for expansion
+        dialog.grid_columnconfigure(1, weight=1)
+        dialog.grid_rowconfigure(1, weight=1)
         
         def submit():
             student_id = id_entry.get().strip()
             try:
-                grades = list(map(int, grades_entry.get().split()))
+                grades = list(map(int, grades_entry.get("1.0", "end-1c").split()))
                 self.tracker.enter_grades(student_id, grades)
                 messagebox.showinfo("Success", "Grades added successfully!")
                 dialog.destroy()
