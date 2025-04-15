@@ -34,55 +34,18 @@ class GradeTrackerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Student Grade Tracker")
-        # Make window fullscreen
-        self.root.attributes('-fullscreen', True)
         self.tracker = GradeTracker()
         
         # Create main frame
-        self.main_frame = ttk.Frame(root)
-        self.main_frame.place(relx=0.5, rely=0.5, anchor='center')
+        self.main_frame = ttk.Frame(root, padding="10")
+        self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        # Configure grid weights
-        self.main_frame.grid_columnconfigure(0, weight=1)
-        for i in range(4):
-            self.main_frame.grid_rowconfigure(i, weight=1)
+        # Create and pack widgets
+        ttk.Label(self.main_frame, text="Student Grade Tracker System", font=('Helvetica', 16, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
         
-        # Create and pack widgets with larger font and size
-        title_label = ttk.Label(
-            self.main_frame,
-            text="Student Grade Tracker System",
-            font=('Helvetica', 24, 'bold')
-        )
-        title_label.grid(row=0, column=0, pady=30)
-        
-        # Style configuration for larger buttons
-        style = ttk.Style()
-        style.configure('Large.TButton', font=('Helvetica', 14))
-        
-        # Create large buttons
-        buttons = [
-            ("Add New Student", self.show_add_student),
-            ("Enter Grades", self.show_enter_grades),
-            ("View Reports", self.show_reports)
-        ]
-        
-        for idx, (text, command) in enumerate(buttons, 1):
-            btn = ttk.Button(
-                self.main_frame,
-                text=text,
-                command=command,
-                style='Large.TButton'
-            )
-            btn.grid(row=idx, column=0, pady=20, ipady=20, ipadx=100)
-            
-        # Add exit button
-        exit_btn = ttk.Button(
-            self.main_frame,
-            text="Exit",
-            command=self.root.destroy,
-            style='Large.TButton'
-        )
-        exit_btn.grid(row=len(buttons)+1, column=0, pady=20, ipady=20, ipadx=100)
+        ttk.Button(self.main_frame, text="Add New Student", command=self.show_add_student).grid(row=1, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        ttk.Button(self.main_frame, text="Enter Grades", command=self.show_enter_grades).grid(row=2, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        ttk.Button(self.main_frame, text="View Reports", command=self.show_reports).grid(row=3, column=0, columnspan=2, pady=5, sticky=tk.EW)
         
     def show_add_student(self):
         dialog = tk.Toplevel(self.root)
