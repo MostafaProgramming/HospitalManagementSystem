@@ -54,25 +54,28 @@ class GradeTrackerGUI:                           # Define a class for the grade 
         dialog.title("Add New Student")
         dialog.geometry("300x250")
         
-        ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5)
-        name_entry = ttk.Entry(dialog)
-        name_entry.grid(row=0, column=1, pady=5, padx=5)
+        ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5, sticky='w')
+        name_entry = tk.Text(dialog, height=1, width=20)
+        name_entry.grid(row=0, column=1, pady=5, padx=5, sticky='ew')
         
-        ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)
-        surname_entry = ttk.Entry(dialog)
-        surname_entry.grid(row=1, column=1, pady=5, padx=5)
+        ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5, sticky='w')
+        surname_entry = tk.Text(dialog, height=1, width=20)
+        surname_entry.grid(row=1, column=1, pady=5, padx=5, sticky='ew')
         
-        ttk.Label(dialog, text="Birth Year:").grid(row=2, column=0, pady=5, padx=5)
-        birth_year_entry = ttk.Entry(dialog)
-        birth_year_entry.grid(row=2, column=1, pady=5, padx=5)
+        ttk.Label(dialog, text="Birth Year:").grid(row=2, column=0, pady=5, padx=5, sticky='w')
+        birth_year_entry = tk.Text(dialog, height=1, width=20)
+        birth_year_entry.grid(row=2, column=1, pady=5, padx=5, sticky='ew')
+        
+        # Configure column weight to allow expansion
+        dialog.grid_columnconfigure(1, weight=1)
         
         honours_var = tk.BooleanVar()
         ttk.Checkbutton(dialog, text="Honours Student", variable=honours_var).grid(row=3, column=0, columnspan=2, pady=5)
         
         def submit():
-            name = name_entry.get().strip()
-            surname = surname_entry.get().strip()
-            birth_year = birth_year_entry.get().strip()
+            name = name_entry.get("1.0", "end-1c").strip()
+            surname = surname_entry.get("1.0", "end-1c").strip()
+            birth_year = birth_year_entry.get("1.0", "end-1c").strip()
             
             if not all([name, surname, birth_year]):
                 messagebox.showerror("Error", "All fields are required!")
