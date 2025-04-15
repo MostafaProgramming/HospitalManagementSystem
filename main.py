@@ -1,8 +1,9 @@
 
-import tkinter as tk
+import tkinter as tk 
 from tkinter import ttk, messagebox
+# Import the Tkinter library for GUI & Import additional Tkinter modules for widgets & message boxes
 
-class Student:
+class Student:                                    # Define a class for a student
     def __init__(self, Firstname, student_id, Surname, Birthyear):
         self.name = Firstname
         self.student_id = student_id
@@ -10,28 +11,28 @@ class Student:
         self.surname = Surname
         self.birthyear = Birthyear
 
-    def add_grade(self, grade):
+    def add_grade(self, grade):                 # Method (add a grade to the student's grades list)
         self._grades.append(grade)
 
-    def calculate_average(self):
+    def calculate_average(self):                # Method (calculate the average grade of the student)
         if len(self._grades) == 0:
             return 0
         return sum(self._grades) / len(self._grades)
 
-    def determine_pass_fail(self):
+    def determine_pass_fail(self):              # Method (determine if the student passed or failed based on their average grade)
         return self.calculate_average() >= 50
 
-    def get_report(self):
+    def get_report(self):                       # Method (generate a report for the students)
         return (f"Student: {self.name} (ID: {self.student_id})\n"
                 f"Grades: {self._grades}\n"
                 f"Average: {self.calculate_average():.2f}\n"
                 f"Status: {'Pass' if self.determine_pass_fail() else 'Fail'}\n")
 
-class HonoursStudent(Student):
-    def determine_pass_fail(self):
+class HonoursStudent(Student):                  # Define a class for an honours student (inherits from the student class)
+    def determine_pass_fail(self):               # Method (override the determine_pass_fail method for honours students)
         return self.calculate_average() >= 70
 
-class GradeTrackerGUI:
+class GradeTrackerGUI:                           # Define a class for the grade tracker GUI
     def __init__(self, root):
         self.root = root
         self.root.title("Student Grade Tracker")
@@ -76,7 +77,7 @@ class GradeTrackerGUI:
             if not all([name, surname, birth_year]):
                 messagebox.showerror("Error", "All fields are required!")
                 return
-                
+        
             student_id = name[0:3] + surname[0:3] + birth_year
             self.tracker.add_student(name, student_id, surname, birth_year, honours_var.get())
             messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
