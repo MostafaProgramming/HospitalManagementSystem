@@ -86,8 +86,22 @@ class GradeTrackerGUI:
             if not all([name, surname, birth_year]):
                 messagebox.showerror("Error", "All fields are required!")
                 return
+            
+            # Validate birth year
+            if not (birth_year.isdigit() and len(birth_year) == 4):
+                messagebox.showerror("Error", "Birth year must be a 4-digit number!")
+                return
                 
-            subject_count = int(subjects_entry.get().strip())                
+            # Validate subject count
+            try:
+                subject_count = int(subjects_entry.get().strip())
+                if not (1 <= subject_count <= 14):
+                    messagebox.showerror("Error", "Subject count must be between 1 and 14!")
+                    return
+            except ValueError:
+                messagebox.showerror("Error", "Subject count must be a number!")
+                return
+                
             student_id = name[0:3] + surname[0:3] + birth_year
             self.tracker.add_student(name, student_id, surname, birth_year, honours_var.get(), subject_count)
             messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
