@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+# Imports the Tkinter library for GUI & the ttk & messagebox modules from Tkinter
 
-class Student:
+class Student:      # Defines the student class with attributes & methods for the student
     def __init__(self, Firstname, student_id, Surname, Birthyear, subject_count):
         self.name = Firstname
         self.student_id = student_id
@@ -10,26 +11,29 @@ class Student:
         self.birthyear = Birthyear
         self.subject_count = subject_count
 
-    def add_grade(self, grade):
+    def add_grade(self, grade):  # Adds a grade to the student's list of grades
         self._grades.append(grade)
 
-    def calculate_average(self):
+    def calculate_average(self):  # Calculates the average grade of the student
         if len(self._grades) == 0:
             return 0
         return sum(self._grades) / len(self._grades)
 
-    def determine_pass_fail(self):
+    def determine_pass_fail(self):  # Determines whether student has passed or failed based on average grade
         return self.calculate_average() >= 50
 
-    def get_report(self):
+    def get_report(self):  # Returns a string report of the student's details
         return (f"Student: {self.name} (ID: {self.student_id})\n"
                 f"Grades: {self._grades}\n"
                 f"Average: {self.calculate_average():.2f}\n"
                 f"Status: {'Pass' if self.determine_pass_fail() else 'Fail'}\n")
+        # Returns the student's name, ID, grades, average grade, & pass/fail status as a string 
+
 
 class HonoursStudent(Student):
     def determine_pass_fail(self):
-        return self.calculate_average() >= 70
+        return self.calculate_average() >= 70 
+ # Defines the HonoursStudent class as a subclass of student, with a different pass/fail threshold   
 
 class GradeTrackerGUI:
     def __init__(self, root):
@@ -83,7 +87,7 @@ class GradeTrackerGUI:
                 messagebox.showerror("Error", "All fields are required!")
                 return
                 
-            subject_count = int(subjects_entry.get().strip())
+            subject_count = int(subjects_entry.get().strip())                
             student_id = name[0:3] + surname[0:3] + birth_year
             self.tracker.add_student(name, student_id, surname, birth_year, honours_var.get(), subject_count)
             messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
