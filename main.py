@@ -122,15 +122,20 @@ class GradeTrackerGUI:
         dialog.geometry(f"300x{100 + subject_count * 40}")
         
         grade_entries = []
+        
+        # Create a frame for grades
+        grades_frame = ttk.Frame(dialog, padding="10")
+        grades_frame.grid(row=0, column=0, sticky='nsew')
+        
         for i in range(subject_count):
-            ttk.Label(dialog, text=f"Grade {i+1}:").grid(row=i, column=0, pady=5, padx=5)
-            entry = ttk.Entry(dialog)
-            entry.grid(row=i, column=1, pady=5, padx=5)
+            ttk.Label(grades_frame, text=f"Grade {i+1}:").grid(row=i, column=0, pady=10, padx=5, sticky='e')
+            entry = ttk.Entry(grades_frame, width=20)
+            entry.grid(row=i, column=1, pady=10, padx=5, sticky='w')
             grade_entries.append(entry)
         
         # Configure grid weights for expansion
-        dialog.grid_columnconfigure(1, weight=1)
-        dialog.grid_rowconfigure(1, weight=1)
+        dialog.grid_columnconfigure(0, weight=1)
+        grades_frame.grid_columnconfigure(1, weight=1)
         
         def submit():
             try:
@@ -144,7 +149,7 @@ class GradeTrackerGUI:
             except ValueError:
                 messagebox.showerror("Error", "Invalid grade format! Please enter numbers only.")
                 
-        ttk.Button(dialog, text="Submit Grades", command=submit).grid(row=2, column=0, columnspan=2, pady=10)
+        ttk.Button(dialog, text="Submit Grades", command=submit).grid(row=1, column=0, pady=20, sticky='ew')
         
     def show_reports(self):
         if not self.tracker.students:
