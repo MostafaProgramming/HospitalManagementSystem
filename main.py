@@ -2,12 +2,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 class Student:
-    def __init__(self, Firstname, student_id, Surname, Birthyear):
+    def __init__(self, Firstname, student_id, Surname, Birthyear, subject_count):
         self.name = Firstname
         self.student_id = student_id
         self._grades = []
         self.surname = Surname
         self.birthyear = Birthyear
+        self.subject_count = subject_count
 
     def add_grade(self, grade):
         self._grades.append(grade)
@@ -50,11 +51,15 @@ class GradeTrackerGUI:
     def show_add_student(self):
         dialog = tk.Toplevel(self.root)
         dialog.title("Add New Student")
-        dialog.geometry("300x250")
+        dialog.geometry("300x300")
         
         ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5)
         name_entry = ttk.Entry(dialog)
         name_entry.grid(row=0, column=1, pady=5, padx=5)
+        
+        ttk.Label(dialog, text="Number of Subjects:").grid(row=3, column=0, pady=5, padx=5)
+        subjects_entry = ttk.Entry(dialog)
+        subjects_entry.grid(row=3, column=1, pady=5, padx=5)
         
         ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)
         surname_entry = ttk.Entry(dialog)
@@ -76,8 +81,9 @@ class GradeTrackerGUI:
                 messagebox.showerror("Error", "All fields are required!")
                 return
                 
+            subject_count = int(subjects_entry.get().strip())
             student_id = name[0:3] + surname[0:3] + birth_year
-            self.tracker.add_student(name, student_id, surname, birth_year, honours_var.get())
+            self.tracker.add_student(name, student_id, surname, birth_year, honours_var.get(), subject_count)
             messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
             dialog.destroy()
             
@@ -87,32 +93,54 @@ class GradeTrackerGUI:
         if not self.tracker.students:
             messagebox.showwarning("Warning", "No students added yet!")
             return
-            
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Enter Grades")
-        dialog.geometry("300x150")
+
+        # First dialog for student ID
+        id_dialog = tk.Toplevel(self.root)
+        id_dialog.title("Enter Student ID")
+        id_dialog.geometry("300x120")
         
-        ttk.Label(dialog, text="Student ID:").grid(row=0, column=0, pady=5, padx=5)
-        id_entry = ttk.Entry(dialog)
+        ttk.Label(id_dialog, text="Student ID:").grid(row=0, column=0, pady=5, padx=5)
+        id_entry = ttk.Entry(id_dialog)
         id_entry.grid(row=0, column=1, pady=5, padx=5)
         
-        ttk.Label(dialog, text="Grades (space-separated):").grid(row=1, column=0, pady=5, padx=5, sticky='n')
-        grades_entry = tk.Text(dialog, height=4, width=20, wrap=tk.WORD)
-        grades_entry.grid(row=1, column=1, pady=5, padx=5, sticky='nsew')
+        def check_id():
+            student_id = id_entry.get().strip()
+            if student_id in self.tracker.students:
+                id_dialog.destroy()
+                self.show_grade_entry_form(student_id)
+            else:
+                messagebox.showerror("Error", "Student ID not found!")
+        
+        ttk.Button(id_dialog, text="Continue", command=check_id).grid(row=1, column=0, columnspan=2, pady=10)
+        
+    def show_grade_entry_form(self, student_id):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Enter Grades")
+        subject_count = self.tracker.students[student_id].subject_count
+        dialog.geometry(f"300x{100 + subject_count * 40}")
+        
+        grade_entries = []
+        for i in range(subject_count):
+            ttk.Label(dialog, text=f"Grade {i+1}:").grid(row=i, column=0, pady=5, padx=5)
+            entry = ttk.Entry(dialog)
+            entry.grid(row=i, column=1, pady=5, padx=5)
+            grade_entries.append(entry)
         
         # Configure grid weights for expansion
         dialog.grid_columnconfigure(1, weight=1)
         dialog.grid_rowconfigure(1, weight=1)
         
         def submit():
-            student_id = id_entry.get().strip()
             try:
-                grades = list(map(int, grades_entry.get("1.0", "end-1c").split()))
+                grades = []
+                for entry in grade_entries:
+                    grade = int(entry.get().strip())
+                    grades.append(grade)
                 self.tracker.enter_grades(student_id, grades)
                 messagebox.showinfo("Success", "Grades added successfully!")
                 dialog.destroy()
             except ValueError:
-                messagebox.showerror("Error", "Invalid grades format!")
+                messagebox.showerror("Error", "Invalid grade format! Please enter numbers only.")
                 
         ttk.Button(dialog, text="Submit Grades", command=submit).grid(row=2, column=0, columnspan=2, pady=10)
         
@@ -145,11 +173,11 @@ class GradeTracker:
     def __init__(self):
         self.students = {}
 
-    def add_student(self, name, student_id, Surname, Birthyear, honours=False):
+    def add_student(self, name, student_id, Surname, Birthyear, honours=False, subject_count=0):
         if honours:
-            student = HonoursStudent(name, student_id, Surname, Birthyear)
+            student = HonoursStudent(name, student_id, Surname, Birthyear, subject_count)
         else:
-            student = Student(name, student_id, Surname, Birthyear)
+            student = Student(name, student_id, Surname, Birthyear, subject_count)
         self.students[student_id] = student
 
     def enter_grades(self, student_id, grades):
