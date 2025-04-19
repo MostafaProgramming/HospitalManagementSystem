@@ -57,10 +57,6 @@ class GradeTrackerGUI:
         name_entry = ttk.Entry(dialog)
         name_entry.grid(row=0, column=1, pady=5, padx=5)
         
-        ttk.Label(dialog, text="Number of Subjects:").grid(row=3, column=0, pady=5, padx=5)
-        subjects_entry = ttk.Entry(dialog)
-        subjects_entry.grid(row=3, column=1, pady=5, padx=5)
-        
         ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)
         surname_entry = ttk.Entry(dialog)
         surname_entry.grid(row=1, column=1, pady=5, padx=5)
@@ -69,8 +65,13 @@ class GradeTrackerGUI:
         birth_year_entry = ttk.Entry(dialog)
         birth_year_entry.grid(row=2, column=1, pady=5, padx=5)
         
+        ttk.Label(dialog, text="Number of Subjects:").grid(row=3, column=0, pady=5, padx=5)
+        subjects_entry = ttk.Entry(dialog)
+        subjects_entry.grid(row=3, column=1, pady=5, padx=5)
+        
         honours_var = tk.BooleanVar()
-        ttk.Checkbutton(dialog, text="Honours Student", variable=honours_var).grid(row=3, column=0, columnspan=2, pady=5)
+        ttk.Label(dialog, text="Honours Student:").grid(row=4, column=0, pady=5, padx=5)
+        ttk.Checkbutton(dialog, text="", variable=honours_var).grid(row=4, column=1, pady=5, padx=5, sticky='w')
         
         def submit():
             name = name_entry.get().strip()
