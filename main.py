@@ -37,59 +37,25 @@ class GradeTrackerGUI:
         self.root.title("Student Grade Tracker")
         self.tracker = GradeTracker()
         
-        self.root.configure(bg='#f0f0f0')
-        
         # Create main frame
-        self.main_frame = ttk.Frame(root, padding="20")
+        self.main_frame = ttk.Frame(root, padding="10")
         self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        # Style configuration
-        style = ttk.Style()
-        style.configure('Title.TLabel', font=('Helvetica', 24, 'bold'), foreground='#2c3e50')
-        style.configure('Custom.TButton', padding=10, font=('Helvetica', 11))
+        # Create and pack widgets
+        ttk.Label(self.main_frame, text="Student Grade Tracker System", font=('Helvetica', 16, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
         
-        # Header with title and separator
-        ttk.Label(self.main_frame, text="Student Grade Tracker", style='Title.TLabel').grid(row=0, column=0, columnspan=2, pady=(0,5))
-        ttk.Label(self.main_frame, text="Academic Management System", font=('Helvetica', 12)).grid(row=1, column=0, columnspan=2, pady=(0,15))
-        ttk.Separator(self.main_frame, orient='horizontal').grid(row=2, column=0, columnspan=2, sticky='ew', pady=(0,20))
-        
-        # Buttons with icons (using Unicode characters as simple icons)
-        btn_frame = ttk.Frame(self.main_frame, padding="10")
-        btn_frame.grid(row=3, column=0, columnspan=2, sticky='ew')
-        
-        buttons = [
-            ("➕ Add New Student", self.show_add_student),
-            ("📝 Enter Grades", self.show_enter_grades),
-            ("📊 View Reports", self.show_reports)
-        ]
-        
-        for idx, (text, command) in enumerate(buttons):
-            btn = ttk.Button(btn_frame, text=text, command=command, style='Custom.TButton')
-            btn.grid(row=idx, column=0, pady=8, sticky='ew', padx=20)
+        ttk.Button(self.main_frame, text="Add New Student", command=self.show_add_student).grid(row=1, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        ttk.Button(self.main_frame, text="Enter Grades", command=self.show_enter_grades).grid(row=2, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        ttk.Button(self.main_frame, text="View Reports", command=self.show_reports).grid(row=3, column=0, columnspan=2, pady=5, sticky=tk.EW)
         
     def show_add_student(self):
         dialog = tk.Toplevel(self.root)
         dialog.title("Add New Student")
-        dialog.geometry("400x450")
-        dialog.configure(bg='#f5f5f5')
+        dialog.geometry("300x300")
         
-        # Header
-        header_frame = ttk.Frame(dialog, padding="20 20 20 0")
-        header_frame.grid(row=0, column=0, sticky='ew')
-        ttk.Label(header_frame, text="New Student Registration", font=('Helvetica', 18, 'bold')).pack()
-        ttk.Separator(header_frame, orient='horizontal').pack(fill='x', pady=(10,0))
-        
-        # Form frame
-        form_frame = ttk.Frame(dialog, padding="30")
-        form_frame.grid(row=1, column=0, sticky='nsew')
-        
-        # Style labels and entries
-        style = ttk.Style()
-        style.configure('Form.TLabel', font=('Helvetica', 11))
-        
-        ttk.Label(form_frame, text="First Name:", style='Form.TLabel').grid(row=0, column=0, pady=(10,5), padx=5, sticky='w')
-        name_entry = ttk.Entry(form_frame, width=30)
-        name_entry.grid(row=1, column=0, pady=(0,15), padx=5)
+        ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5)
+        name_entry = ttk.Entry(dialog)
+        name_entry.grid(row=0, column=1, pady=5, padx=5)
         
         ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)
         surname_entry = ttk.Entry(dialog)
@@ -152,19 +118,8 @@ class GradeTrackerGUI:
     def show_grade_entry_form(self, student_id):
         dialog = tk.Toplevel(self.root)
         dialog.title("Enter Grades")
-        student = self.tracker.students[student_id]
-        subject_count = student.subject_count
-        dialog.geometry(f"450x{150 + subject_count * 50}")
-        dialog.configure(bg='#f5f5f5')
-        
-        # Header
-        header_frame = ttk.Frame(dialog, padding="20 20 20 0")
-        header_frame.grid(row=0, column=0, sticky='ew')
-        ttk.Label(header_frame, text=f"Grade Entry - {student.name} {student.surname}", 
-                 font=('Helvetica', 16, 'bold')).pack()
-        ttk.Label(header_frame, text=f"Student ID: {student_id}", 
-                 font=('Helvetica', 10)).pack(pady=(5,0))
-        ttk.Separator(header_frame, orient='horizontal').pack(fill='x', pady=(10,0))
+        subject_count = self.tracker.students[student_id].subject_count
+        dialog.geometry(f"300x{100 + subject_count * 40}")
         
         grade_entries = []
         
@@ -208,25 +163,10 @@ class GradeTrackerGUI:
             
         dialog = tk.Toplevel(self.root)
         dialog.title("Student Reports")
-        dialog.geometry("600x500")
-        dialog.configure(bg='#f5f5f5')
+        dialog.geometry("400x300")
         
-        # Header
-        header_frame = ttk.Frame(dialog, padding="20 20 20 0")
-        header_frame.grid(row=0, column=0, sticky='ew')
-        ttk.Label(header_frame, text="Academic Performance Reports", 
-                 font=('Helvetica', 18, 'bold')).pack()
-        ttk.Label(header_frame, text="Student Grade Analysis", 
-                 font=('Helvetica', 10)).pack(pady=(5,0))
-        ttk.Separator(header_frame, orient='horizontal').pack(fill='x', pady=(10,0))
-        
-        # Report content
-        report_frame = ttk.Frame(dialog, padding="20")
-        report_frame.grid(row=1, column=0, sticky='nsew')
-        
-        text_widget = tk.Text(report_frame, wrap=tk.WORD, width=60, height=20,
-                            font=('Helvetica', 11), bg='white', relief='solid')
-        text_widget.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        text_widget = tk.Text(dialog, wrap=tk.WORD, width=40, height=15)
+        text_widget.grid(row=0, column=0, padx=10, pady=10)
         
         scrollbar = ttk.Scrollbar(dialog, orient=tk.VERTICAL, command=text_widget.yview)
         scrollbar.grid(row=0, column=1, sticky=tk.NS)
