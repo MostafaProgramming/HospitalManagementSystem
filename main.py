@@ -71,7 +71,8 @@ class GradeTrackerGUI:
         
         honours_var = tk.BooleanVar()
         ttk.Label(dialog, text="Honours Student:").grid(row=4, column=0, pady=5, padx=5)
-        ttk.Checkbutton(dialog, text="", variable=honours_var).grid(row=4, column=1, pady=5, padx=5, sticky='w')
+        honours_checkbox = ttk.Checkbutton(dialog, variable=honours_var)
+        honours_checkbox.grid(row=4, column=1, pady=5, padx=5, sticky='w')
         
         def submit():
             name = name_entry.get().strip()
@@ -88,7 +89,7 @@ class GradeTrackerGUI:
             messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
             dialog.destroy()
             
-        ttk.Button(dialog, text="Add Student", command=submit).grid(row=4, column=0, columnspan=2, pady=10)
+        ttk.Button(dialog, text="Add Student", command=submit).grid(row=5, column=0, columnspan=2, pady=10)
         
     def show_enter_grades(self):
         if not self.tracker.students:
