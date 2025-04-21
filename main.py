@@ -35,7 +35,7 @@ class HonoursStudent(Student):
         return self.calculate_average() >= 70 
  # Defines the HonoursStudent class as a subclass of student, with a different pass/fail threshold   
 
-class GradeTrackerGUI:
+class GradeTrackerGUI:      # Defines the GradeTrackerGUI class, which is the main GUI for the grade tracker system.
     def __init__(self, root):
         self.root = root
         self.root.title("Student Grade Tracker")
@@ -88,8 +88,8 @@ class GradeTrackerGUI:
                 return
             
             # Validate birth year
-            if not (birth_year.isdigit() and len(birth_year) == 4):
-                messagebox.showerror("Error", "Birth year must be a 4-digit number!")
+            if not (birth_year.isdigit() and birth_year >= '1945' and birth_year <= '2023'):
+                messagebox.showerror("Error", "Birth year must be a number between 1945 and 2023!")
                 return
                 
             # Validate subject count
