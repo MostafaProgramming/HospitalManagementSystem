@@ -5,8 +5,7 @@ from tkinter import ttk, messagebox
 
 class Student:  # Defines the student class with attributes & methods for the student
 
-    def __init__(self, Firstname, student_id, Surname, Birthyear,
-                 subject_count):
+    def __init__(self, Firstname, student_id, Surname, Birthyear, subject_count):
         self.name = Firstname
         self.student_id = student_id
         self._grades = []
