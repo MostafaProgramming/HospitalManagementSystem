@@ -48,17 +48,25 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         
         # Style configuration
         style = ttk.Style()
-        style.configure('MainFrame.TFrame', background='#ffffff')
-        style.configure('Header.TLabel', font=('Helvetica', 24, 'bold'), foreground='#2c3e50')
-        style.configure('Subheader.TLabel', font=('Helvetica', 12), foreground='#7f8c8d')
+        style.configure('MainFrame.TFrame', background='#f8f9fa')
+        style.configure('Header.TLabel', font=('Inter', 28, 'bold'), foreground='#1a73e8')
+        style.configure('Subheader.TLabel', font=('Inter', 14), foreground='#5f6368')
         style.configure('Action.TButton', 
-                       font=('Helvetica', 11),
+                       font=('Inter', 12),
                        padding=15,
-                       background='#3498db',
+                       background='#1a73e8',
                        foreground='#ffffff')
         style.map('Action.TButton',
-                 background=[('active', '#2980b9')],
+                 background=[('active', '#1557b0')],
                  foreground=[('active', '#ffffff')])
+        style.configure('TEntry', 
+                       padding=10,
+                       borderwidth=1,
+                       relief='solid')
+        style.configure('Card.TFrame',
+                       background='#ffffff',
+                       relief='solid',
+                       borderwidth=1)
         
         # Create main frame with improved spacing
         self.main_frame = ttk.Frame(root, style='MainFrame.TFrame')
@@ -92,9 +100,19 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
     def show_add_student(self):
         dialog = tk.Toplevel(self.root)
         dialog.title("Add New Student")
-        dialog.geometry("500x550")
+        dialog.geometry("500x600")
         dialog.resizable(False, False)
-        dialog.configure(bg='#f0f0f0')
+        dialog.configure(bg='#f8f9fa')
+        
+        # Add shadow effect
+        dialog.overrideredirect(False)
+        dialog.attributes('-alpha', 0.98)
+        
+        # Round corners (if supported by OS)
+        try:
+            dialog.attributes('-toolwindow', True)
+        except:
+            pass
         
         # Center the dialog
         dialog.transient(self.root)
@@ -143,12 +161,12 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
             birth_year = birth_year_entry.get().strip()
 
             if not all([name, surname, birth_year]):
-                messagebox.showerror("Error", "All fields are required!")
+                messagebox.showerror("Missing Information", "Please fill in all required fields to continue.")
                 return
 
             # Validate birth year
             if not (birth_year.isdigit() and birth_year >= '1945' and birth_year <= '2023'):
-                messagebox.showerror("Error", "Birth year must be a number between 1945 and 2023!")
+                messagebox.showerror("Invalid Birth Year", "Please enter a valid birth year (between 1945 and 2023).")
                 return
 
             # Validate subject count
@@ -163,7 +181,7 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
 
             student_id = name[0:3] + surname[0:3] + birth_year
             self.tracker.add_student(name, student_id, surname, birth_year, honours_var.get(), subject_count)
-            messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
+            messagebox.showinfo("Success", f"✅ Student added successfully!\nStudent ID: {student_id}\n\nYou can now enter grades for this student.")
             dialog.destroy()
 
         ttk.Button(main_frame, text="Add Student", command=submit).grid(row=6, column=0, columnspan=2, pady=20)
@@ -242,8 +260,16 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         dialog.title("Student Reports")
         dialog.geometry("400x300")
 
-        text_widget = tk.Text(dialog, wrap=tk.WORD, width=40, height=15)
-        text_widget.grid(row=0, column=0, padx=10, pady=10)
+        # Create a card-like frame
+        report_frame = ttk.Frame(dialog, style='Card.TFrame')
+        report_frame.grid(row=0, column=0, padx=20, pady=20, sticky='nsew')
+        
+        text_widget = tk.Text(report_frame, wrap=tk.WORD, width=45, height=15,
+                            font=('Inter', 11),
+                            bg='#ffffff',
+                            relief='flat',
+                            padx=15, pady=15)
+        text_widget.grid(row=0, column=0, padx=1, pady=1, sticky='nsew')
 
         scrollbar = ttk.Scrollbar(dialog, orient=tk.VERTICAL, command=text_widget.yview)
         scrollbar.grid(row=0, column=1, sticky=tk.NS)
