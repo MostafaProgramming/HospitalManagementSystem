@@ -101,42 +101,41 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         dialog.grab_set()
         self.root.eval(f'tk::PlaceWindow {str(dialog)} center')
         
-        # Create a main frame for the dialog
+        # Create main frame
         main_frame = ttk.Frame(dialog, padding="20")
-        main_frame.pack(expand=True, fill='both')
+        main_frame.grid(row=0, column=0, sticky='nsew')
+        
+        # Configure grid
+        dialog.grid_columnconfigure(0, weight=1)
+        dialog.grid_rowconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
         
         # Add header
         ttk.Label(main_frame, 
                  text="Add New Student",
-                 style='Header.TLabel').pack(pady=(0, 20))
+                 style='Header.TLabel').grid(row=0, column=0, columnspan=2, pady=(0, 20))
         
-        # Create form frame
-        form_frame = ttk.Frame(main_frame)
-        form_frame.pack(fill='x', padx=30)
-        
-        # Configure grid
-        form_frame.columnconfigure(1, weight=1)
+        # Add form fields
+        ttk.Label(main_frame, text="First Name:").grid(row=1, column=0, pady=5, padx=5, sticky='e')
+        name_entry = ttk.Entry(main_frame)
+        name_entry.grid(row=1, column=1, pady=5, padx=5, sticky='ew')
 
-        ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5) # Creates labels & entry fields for the student's details
-        name_entry = ttk.Entry(dialog) # Creates an entry field for the student's name
-        name_entry.grid(row=0, column=1, pady=5, padx=5) # Packs the entry field into the dialog window
+        ttk.Label(main_frame, text="Surname:").grid(row=2, column=0, pady=5, padx=5, sticky='e')
+        surname_entry = ttk.Entry(main_frame)
+        surname_entry.grid(row=2, column=1, pady=5, padx=5, sticky='ew')
 
-        ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)  # Creates a label & entry field for the student's surname
-        surname_entry = ttk.Entry(dialog)  # Creates an entry field for the student's surname
-        surname_entry.grid(row=1, column=1, pady=5, padx=5)  # Packs the entry field into the dialog window
+        ttk.Label(main_frame, text="Birth Year:").grid(row=3, column=0, pady=5, padx=5, sticky='e')
+        birth_year_entry = ttk.Entry(main_frame)
+        birth_year_entry.grid(row=3, column=1, pady=5, padx=5, sticky='ew')
 
-        ttk.Label(dialog, text="Birth Year:").grid(row=2, column=0, pady=5, padx=5)
-        birth_year_entry = ttk.Entry(dialog)
-        birth_year_entry.grid(row=2, column=1, pady=5, padx=5)
-
-        ttk.Label(dialog, text="Number of Subjects:").grid(row=3, column=0, pady=5, padx=5)
-        subjects_entry = ttk.Entry(dialog)
-        subjects_entry.grid(row=3, column=1, pady=5, padx=5)
+        ttk.Label(main_frame, text="Number of Subjects:").grid(row=4, column=0, pady=5, padx=5, sticky='e')
+        subjects_entry = ttk.Entry(main_frame)
+        subjects_entry.grid(row=4, column=1, pady=5, padx=5, sticky='ew')
 
         honours_var = tk.BooleanVar()
-        ttk.Label(dialog, text="Honours Student:").grid(row=4, column=0, pady=5, padx=5)
-        honours_checkbox = ttk.Checkbutton(dialog, variable=honours_var)
-        honours_checkbox.grid(row=4, column=1, pady=5, padx=5, sticky='w')
+        ttk.Label(main_frame, text="Honours Student:").grid(row=5, column=0, pady=5, padx=5, sticky='e')
+        honours_checkbox = ttk.Checkbutton(main_frame, variable=honours_var)
+        honours_checkbox.grid(row=5, column=1, pady=5, padx=5, sticky='w')
 
         def submit(): # Defines the submit method to add the student to the grade tracker system
             name = name_entry.get().strip().upper()
@@ -167,7 +166,7 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
             messagebox.showinfo("Success", f"Student added successfully!\nStudent ID: {student_id}")
             dialog.destroy()
 
-        ttk.Button(dialog, text="Add Student", command=submit).grid(row=5, column=0, columnspan=2, pady=10)
+        ttk.Button(main_frame, text="Add Student", command=submit).grid(row=6, column=0, columnspan=2, pady=20)
 
     def show_enter_grades(self):
         if not self.tracker.students:
