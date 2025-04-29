@@ -56,9 +56,9 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         name_entry = ttk.Entry(dialog) # Creates an entry field for the student's name
         name_entry.grid(row=0, column=1, pady=5, padx=5) # Packs the entry field into the dialog window
 
-        ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)
-        surname_entry = ttk.Entry(dialog)
-        surname_entry.grid(row=1, column=1, pady=5, padx=5)
+        ttk.Label(dialog, text="Surname:").grid(row=1, column=0, pady=5, padx=5)  # Creates a label & entry field for the student's surname
+        surname_entry = ttk.Entry(dialog)  # Creates an entry field for the student's surname
+        surname_entry.grid(row=1, column=1, pady=5, padx=5)  # Packs the entry field into the dialog window
 
         ttk.Label(dialog, text="Birth Year:").grid(row=2, column=0, pady=5, padx=5)
         birth_year_entry = ttk.Entry(dialog)
