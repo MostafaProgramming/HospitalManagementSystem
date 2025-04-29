@@ -48,13 +48,13 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         
         # Style configuration
         style = ttk.Style()
-        style.configure('MainFrame.TFrame', background='#f8f9fa')
-        style.configure('Header.TLabel', font=('Inter', 28, 'bold'), foreground='#1a73e8')
-        style.configure('Subheader.TLabel', font=('Inter', 14), foreground='#5f6368')
+        style.configure('MainFrame.TFrame', background='#ffffff')
+        style.configure('Header.TLabel', font=('Helvetica', 32, 'bold'), foreground='#2c3e50')
+        style.configure('Subheader.TLabel', font=('Helvetica', 14), foreground='#7f8c8d')
         style.configure('Action.TButton', 
-                       font=('Inter', 12),
-                       padding=15,
-                       background='#1a73e8',
+                       font=('Helvetica', 12, 'bold'),
+                       padding=20,
+                       background='#3498db',
                        foreground='#ffffff')
         style.map('Action.TButton',
                  background=[('active', '#1557b0')],
@@ -102,11 +102,21 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         dialog.title("Add New Student")
         dialog.geometry("500x600")
         dialog.resizable(False, False)
-        dialog.configure(bg='#f8f9fa')
+        dialog.configure(bg='#ffffff')
         
-        # Add shadow effect
+        # Enhanced window styling
         dialog.overrideredirect(False)
-        dialog.attributes('-alpha', 0.98)
+        dialog.attributes('-alpha', 1.0)
+        dialog.resizable(False, False)
+        
+        # Set window position
+        window_width = 500
+        window_height = 600
+        screen_width = dialog.winfo_screenwidth()
+        screen_height = dialog.winfo_screenheight()
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        dialog.geometry(f"{window_width}x{window_height}+{x}+{y}")
         
         # Round corners (if supported by OS)
         try:
@@ -265,10 +275,13 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         report_frame.grid(row=0, column=0, padx=20, pady=20, sticky='nsew')
         
         text_widget = tk.Text(report_frame, wrap=tk.WORD, width=45, height=15,
-                            font=('Inter', 11),
+                            font=('Helvetica', 12),
                             bg='#ffffff',
+                            fg='#2c3e50',
                             relief='flat',
-                            padx=15, pady=15)
+                            padx=20, pady=20,
+                            selectbackground='#3498db',
+                            selectforeground='#ffffff')
         text_widget.grid(row=0, column=0, padx=1, pady=1, sticky='nsew')
 
         scrollbar = ttk.Scrollbar(dialog, orient=tk.VERTICAL, command=text_widget.yview)
