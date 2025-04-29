@@ -37,30 +37,46 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         self.tracker = GradeTracker()
         
         # Configure window size and centering
-        window_width = 400
-        window_height = 300
+        window_width = 500
+        window_height = 400
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
         center_x = int(screen_width/2 - window_width/2)
         center_y = int(screen_height/2 - window_height/2)
         self.root.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+        self.root.configure(bg='#f0f0f0')
+        
+        # Style configuration
+        style = ttk.Style()
+        style.configure('MainFrame.TFrame', background='#ffffff')
+        style.configure('Header.TLabel', font=('Helvetica', 24, 'bold'), foreground='#2c3e50')
+        style.configure('Subheader.TLabel', font=('Helvetica', 12), foreground='#7f8c8d')
+        style.configure('Action.TButton', 
+                       font=('Helvetica', 11),
+                       padding=15,
+                       background='#3498db',
+                       foreground='#ffffff')
+        style.map('Action.TButton',
+                 background=[('active', '#2980b9')],
+                 foreground=[('active', '#ffffff')])
         
         # Create main frame with improved spacing
-        self.main_frame = ttk.Frame(root)
-        self.main_frame.pack(expand=True, fill='both', padx=20, pady=20)
+        self.main_frame = ttk.Frame(root, style='MainFrame.TFrame')
+        self.main_frame.pack(expand=True, fill='both', padx=30, pady=30)
         
-        # Create header frame
+        # Create header frame with title and subtitle
         header_frame = ttk.Frame(self.main_frame)
-        header_frame.pack(fill='x', pady=(0, 20))
-        ttk.Label(header_frame, text="Student Grade Tracker", font=('Helvetica', 20, 'bold')).pack()
+        header_frame.pack(fill='x', pady=(0, 30))
+        ttk.Label(header_frame, 
+                 text="Student Grade Tracker",
+                 style='Header.TLabel').pack(pady=(0, 5))
+        ttk.Label(header_frame,
+                 text="Manage student records and grades efficiently",
+                 style='Subheader.TLabel').pack()
         
-        # Create button frame
+        # Create button frame with enhanced styling
         button_frame = ttk.Frame(self.main_frame)
-        button_frame.pack(expand=True)
-        
-        # Style configuration for buttons
-        style = ttk.Style()
-        style.configure('Action.TButton', padding=10)
+        button_frame.pack(expand=True, fill='x', padx=50)
         
         # Create buttons with improved spacing and style
         buttons = [
@@ -76,13 +92,30 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
     def show_add_student(self):
         dialog = tk.Toplevel(self.root)
         dialog.title("Add New Student")
-        dialog.geometry("400x450")
+        dialog.geometry("500x550")
         dialog.resizable(False, False)
+        dialog.configure(bg='#f0f0f0')
         
         # Center the dialog
         dialog.transient(self.root)
         dialog.grab_set()
         self.root.eval(f'tk::PlaceWindow {str(dialog)} center')
+        
+        # Create a main frame for the dialog
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(expand=True, fill='both')
+        
+        # Add header
+        ttk.Label(main_frame, 
+                 text="Add New Student",
+                 style='Header.TLabel').pack(pady=(0, 20))
+        
+        # Create form frame
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='x', padx=30)
+        
+        # Configure grid
+        form_frame.columnconfigure(1, weight=1)
 
         ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5) # Creates labels & entry fields for the student's details
         name_entry = ttk.Entry(dialog) # Creates an entry field for the student's name
