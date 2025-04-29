@@ -35,22 +35,54 @@ class GradeTrackerGUI: # Defines the GradeTrackerGUI class, which is the main GU
         self.root = root
         self.root.title("Student Grade Tracker")
         self.tracker = GradeTracker()
+        
+        # Configure window size and centering
+        window_width = 400
+        window_height = 300
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        center_x = int(screen_width/2 - window_width/2)
+        center_y = int(screen_height/2 - window_height/2)
+        self.root.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+        
+        # Create main frame with improved spacing
+        self.main_frame = ttk.Frame(root)
+        self.main_frame.pack(expand=True, fill='both', padx=20, pady=20)
+        
+        # Create header frame
+        header_frame = ttk.Frame(self.main_frame)
+        header_frame.pack(fill='x', pady=(0, 20))
+        ttk.Label(header_frame, text="Student Grade Tracker", font=('Helvetica', 20, 'bold')).pack()
+        
+        # Create button frame
+        button_frame = ttk.Frame(self.main_frame)
+        button_frame.pack(expand=True)
+        
+        # Style configuration for buttons
+        style = ttk.Style()
+        style.configure('Action.TButton', padding=10)
+        
+        # Create buttons with improved spacing and style
+        buttons = [
+            ("Add New Student", self.show_add_student),
+            ("Enter Grades", self.show_enter_grades),
+            ("View Reports", self.show_reports)
+        ]
+        
+        for text, command in buttons:
+            btn = ttk.Button(button_frame, text=text, command=command, style='Action.TButton')
+            btn.pack(fill='x', pady=10, ipady=5)
 
-        # Create main frame
-        self.main_frame = ttk.Frame(root, padding="10") # Creates a GUI main frame with padding
-        self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S)) # Packs the main frame into the root window, with padding and sticky edges
-
-        # Create and pack widgets
-        ttk.Label(self.main_frame, text="Student Grade Tracker System", font=('Helvetica', 16, 'bold')).grid(row=0, column=0, columnspan=2, pady=10) # Creates the main label for the GUI main menu
-
-        ttk.Button(self.main_frame, text="Add New Student", command=self.show_add_student).grid(row=1, column=0, columnspan=2, pady=5, sticky=tk.EW)
-        ttk.Button(self.main_frame, text="Enter Grades", command=self.show_enter_grades).grid(row=2, column=0, columnspan=2, pady=5, sticky=tk.EW)
-        ttk.Button(self.main_frame, text="View Reports", command=self.show_reports).grid(row=3, column=0, columnspan=2, pady=5, sticky=tk.EW) # Creates the buttons for the main menu, with commands to open the respective dialogs
-
-    def show_add_student(self): # Defines this method to show the add student dialog
-        dialog = tk.Toplevel(self.root) # Creates a new dialog window
+    def show_add_student(self):
+        dialog = tk.Toplevel(self.root)
         dialog.title("Add New Student")
-        dialog.geometry("300x300")
+        dialog.geometry("400x450")
+        dialog.resizable(False, False)
+        
+        # Center the dialog
+        dialog.transient(self.root)
+        dialog.grab_set()
+        self.root.eval(f'tk::PlaceWindow {str(dialog)} center')
 
         ttk.Label(dialog, text="First Name:").grid(row=0, column=0, pady=5, padx=5) # Creates labels & entry fields for the student's details
         name_entry = ttk.Entry(dialog) # Creates an entry field for the student's name
