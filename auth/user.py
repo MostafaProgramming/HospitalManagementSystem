@@ -3,7 +3,7 @@ import datetime
 
 class User:
 
-    def __init__(self, userID, username, salt, password_hash, role, created_at=None, last_login_at=None, active=False):
+    def __init__(self, userID, username, salt, password_hash, role, created_at=None, last_login_at = None, active = False):
 
         self.userID = userID
         self.username = username
