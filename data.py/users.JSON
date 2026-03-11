@@ -1,0 +1,12 @@
+{
+    "asdasd": {
+        "userID": "U001",
+        "username": "asdasd",
+        "salt": "F56jH",
+        "password_hash": "9cd468e31d351086ad3429ed1abc4b2f44032cee8b1ac5588e7d21c5a5f56845",
+        "role": "Doctor",
+        "created_at": "2026-03-10 17:39:06.657716",
+        "last_login_at": "2026-03-10 17:39:57.958418",
+        "active": true
+    }
+}
