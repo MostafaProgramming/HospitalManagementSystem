@@ -1,6 +1,7 @@
 current_user_id = 1
 current_session_id = 1
 current_patient_id = 1
+current_medication_id = 1
 
 
 def assign_user_id():
@@ -22,3 +23,9 @@ def assign_patient_id():
     patient_id = "P00" + str(current_patient_id)
     current_patient_id += 1
     return patient_id
+
+def assign_medication_id():
+    global current_medication_id
+    medication_id = "M00" + str(current_medication_id)
+    current_medication_id += 1
+    return medication_id

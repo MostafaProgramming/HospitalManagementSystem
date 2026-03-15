@@ -10,6 +10,7 @@ from utils.id_generator import assign_user_id, assign_session_id
 from utils.json_storage import load_data, save_data
 
 from modules.ehr import ehr_menu
+from modules.medication_stock import medication_menu
 
 
 # -----------------------------
@@ -203,11 +204,12 @@ def main_menu():
         option = input("Enter choice: ")
 
         if option == "1":
-
             ehr_menu()
 
-        elif option == "7":
+        elif option == "2":
+            medication_menu()
 
+        elif option == "7":
             logout()
             break
 

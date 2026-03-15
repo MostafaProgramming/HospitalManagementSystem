@@ -1,0 +1,11 @@
+{
+    "M001": {
+        "id": "M001",
+        "name": "h",
+        "category": "j",
+        "description": "j",
+        "maxStock": 67,
+        "reorderLevel": 3,
+        "currentQty": 67
+    }
+}

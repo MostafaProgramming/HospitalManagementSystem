@@ -36,6 +36,7 @@ class User:
         return User(
             data["userID"],
             data["username"],
+            #data["password"],
             data["salt"],
             data["password_hash"],
             data["role"],
