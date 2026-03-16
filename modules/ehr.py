@@ -107,6 +107,7 @@ def update_patient():
 # -----------------------------
 
 def delete_patient():
+
     patient_id = input("Enter patient ID to delete: ")
 
     if patient_id in patients:
