@@ -18,11 +18,8 @@ from modules.medication_stock import medication_menu
 # -----------------------------
 
 raw_users = load_data("data/users.json")
-
 users_table = {}
-
 for username, user_data in raw_users.items():
-
     users_table[username] = User.from_dict(user_data)
 
 

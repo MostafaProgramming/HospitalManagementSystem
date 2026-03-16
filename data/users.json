@@ -6,7 +6,7 @@
         "password_hash": "6c29fa9b63c21d8eb7b75f1c98ed177ece61a23a06e7dcd192a8ef5af9867f94",
         "role": "h",
         "created_at": "2026-03-15 16:59:22.618777",
-        "last_login_at": null,
-        "active": false
+        "last_login_at": "2026-03-16 15:20:39.272524",
+        "active": true
     }
 }

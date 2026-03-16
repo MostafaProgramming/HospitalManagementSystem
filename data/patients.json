@@ -1,1 +1,55 @@
-{}
+{
+    "P001": {
+        "patient_id": "P001",
+        "first_name": "unc hills",
+        "last_name": "hills",
+        "email": "hills@gmail.com",
+        "phone": "0876 546547",
+        "dob": "12/45/16786687",
+        "condition": "rf",
+        "medication": "e",
+        "created_at": "2026-03-16 14:04:35.637190",
+        "updated_at": "2026-03-16 14:04:35.637206",
+        "medications": [
+            {
+                "medication_id": "M001",
+                "medication_name": "h",
+                "dosage": 4
+            },
+            {
+                "medication_id": "M002",
+                "medication_name": "h",
+                "dosage": 8
+            }
+        ]
+    },
+    "P002": {
+        "patient_id": "P002",
+        "first_name": "g",
+        "last_name": "g",
+        "email": "g",
+        "phone": "5",
+        "dob": "6",
+        "condition": "t",
+        "medication": "y",
+        "created_at": "2026-03-16 14:05:11.646136",
+        "updated_at": "2026-03-16 14:05:11.646157",
+        "medications": [
+            {
+                "medication_id": "M002",
+                "medication_name": "h",
+                "dosage": 6
+            },
+            {
+                "medication_id": "M002",
+                "medication_name": "h",
+                "dosage": 10
+            },
+            {
+                "medication_id": "M002",
+                "medication_name": "h",
+                "dosage": 6
+            }
+        ]
+    }
+}
