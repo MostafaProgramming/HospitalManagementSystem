@@ -1,11 +1,20 @@
 {
     "M001": {
         "id": "M001",
-        "name": "h",
-        "category": "j",
-        "description": "j",
-        "maxStock": 67,
-        "reorderLevel": 3,
-        "currentQty": 67
+        "name": "r",
+        "category": "g",
+        "description": "y",
+        "maxStock": 90,
+        "reorderLevel": 56,
+        "currentQty": 90
+    },
+    "M002": {
+        "id": "M002",
+        "name": "yu",
+        "category": "ui",
+        "description": "r",
+        "maxStock": 55,
+        "reorderLevel": 44,
+        "currentQty": 55
     }
 }

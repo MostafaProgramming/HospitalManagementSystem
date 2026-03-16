@@ -142,27 +142,57 @@ def resupply_medication():
 
 def use_medication():
 
+    patients = load_data("data/patients.json")
+
     med_id = input("Enter medication ID used: ")
 
     if med_id not in medications:
         print("Medication not found")
         return
 
-    med = medications[med_id]
+    # Enter patient ID
+    patient_id = input("Enter patient ID: ")
 
-    # Check if medication is out of stock
-    if med["currentQty"] <= 0:
-        print("Out of stock")
+    # Check if the patient ID is valid
+    if patient_id not in patients:
+        print("Patient not found")
         return
 
-    # Decrease the stock by 1 each time the medication is used
-    med["currentQty"] -= 1
+    # Input validation for dosage amount (between 1 and 10)
+    while True:
+        try:
+            dosage = int(input(f"Enter dosage amount for {medications[med_id]['name']} (1-10): "))
+            if 1 <= dosage <= 10:
+                break
+            else:
+                print("Dosage must be between 1 and 10.")
+        except ValueError:
+            print("Please enter a valid integer for dosage.")
 
-    # Save the updated medications dictionary to the JSON file
-    save_medications()
+    # Check if enough stock is available for the dosage
+    if medications[med_id]["currentQty"] >= dosage:
+        # Administer medication
+        medications[med_id]["currentQty"] -= dosage
 
-    # Confirm usage
-    print(f"{med['name']} used. Remaining stock: {med['currentQty']}")
+        # Update the patient's record
+        if "medications" not in patients[patient_id]:
+            patients[patient_id]["medications"] = []
+
+        patients[patient_id]["medications"].append({
+            "medication_id": med_id,
+            "medication_name": medications[med_id]["name"],
+            "dosage": dosage
+        })
+
+        # Save the updated medications and patients dictionaries to JSON
+        save_medications()
+        save_data("data/patients.json", patients)
+
+        print(f"{dosage} units of {medications[med_id]['name']} administered to patient {patient_id}.")
+        print("Remaining stock:", medications[med_id]["currentQty"])
+    else:
+        print("Not enough stock to administer that dosage.")
+
 
 
 # -----------------------------
