@@ -1,15 +1,8 @@
 from utils.json_storage import load_data, save_data
 from utils.id_generator import assign_medication_id
-import utils.id_generator as id_gen
 
 # Load medications from JSON file
 medications = load_data("data/medications.json")
-
-# Set the ID counter based on existing data so new entries don't overwrite old ones
-if medications:
-    existing_nums = [int(k[3:]) for k in medications.keys() if k.startswith("M00")]
-    if existing_nums:
-        id_gen.current_medication_id = max(existing_nums) + 1
 
 
 # -----------------------------
@@ -108,7 +101,7 @@ def view_medications():
 
         # Low stock warning
         if med["currentQty"] < med["reorderLevel"]:
-            print("⚠ LOW STOCK")
+            print("Warning, LOW STOCK")
 
 
 # -----------------------------

@@ -12,6 +12,7 @@ import utils.id_generator as id_gen
 
 from modules.ehr import ehr_menu
 from modules.medication_stock import medication_menu
+from modules.room_booking import room_booking_menu  
 
 
 # -----------------------------
@@ -225,6 +226,9 @@ def main_menu():
 
         elif option == "2":
             medication_menu()
+
+        elif option == "4":
+            room_booking_menu()
 
         elif option == "7":
             logout()

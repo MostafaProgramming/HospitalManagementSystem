@@ -1,12 +1,22 @@
 {
-    "Hatem": {
+    "hatem": {
         "userID": "U001",
-        "username": "Hatem",
-        "salt": "nQF9C",
-        "password_hash": "c3cb900c5fdff04fedb2bd6695fa295fb4ec0068ae178baf0152e52a1d5d717d",
+        "username": "hatem",
+        "salt": "hwLlg",
+        "password_hash": "9e9da65d1306bd3cbb104e37d79d21ee29b3e009f2b60d201de3adc8df3c9022",
         "role": "Nurse",
-        "created_at": "2026-03-18 09:56:06.025370",
-        "last_login_at": null,
+        "created_at": "2026-03-18 10:20:57.694690",
+        "last_login_at": "2026-03-18 13:22:15.906592",
+        "active": true
+    },
+    "jk": {
+        "userID": "U002",
+        "username": "jk",
+        "salt": "FObTb",
+        "password_hash": "8d0b9110f8afa63f350d53adb30af2c738beaa99576335b6f86acc9f42eea211",
+        "role": "Nurse",
+        "created_at": "2026-03-18 10:21:59.495128",
+        "last_login_at": "2026-03-18 10:22:57.861321",
         "active": false
     }
 }
