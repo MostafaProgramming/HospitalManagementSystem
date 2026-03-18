@@ -38,7 +38,8 @@ sessions = {}
 current_user = None
 current_session = None
 
-Signup_key = None
+config = load_data("data/config.json")
+Signup_key = config.get("signup_key", None)
 session_duration_minutes = 20
 
 
@@ -68,11 +69,18 @@ def enteruser():
     if len(users_table) == 0:
 
         Signup_key = input("Create a signup key: ")
+        save_data("data/config.json", {"signup_key": Signup_key})
         print("\nSignup key created:", Signup_key)
 
     else:
 
-        entered_key = input("Enter the signup key:")
+        if Signup_key is None:
+            Signup_key = input("No signup key found. Set a new signup key: ")
+            save_data("data/config.json", {"signup_key": Signup_key})
+            print("\nNew signup key set.")
+            return True
+
+        entered_key = input("Enter the signup key: ")
 
         if entered_key != Signup_key:
 
@@ -125,9 +133,11 @@ def login():
     username = input("Enter username: ")
     password = input("Enter password: ")
 
-    if username in users_table:
+    matched_username = next((u for u in users_table if u.lower() == username.lower()), None)
 
-        user_obj = users_table[username]
+    if matched_username:
+
+        user_obj = users_table[matched_username]
 
         test_hash = hash_password(password + user_obj.salt)
 
