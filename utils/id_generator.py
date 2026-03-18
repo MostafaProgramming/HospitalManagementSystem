@@ -32,3 +32,8 @@ def assign_medication_id():
     return medication_id
 
 
+#def assign_medication_id():
+#    global current_medication_id
+#    med_id = "M" + str(current_medication_id).zfill(3)
+#    current_medication_id += 1
+#    return med_id

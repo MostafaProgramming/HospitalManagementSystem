@@ -25,32 +25,5 @@
         "maxStock": 55,
         "reorderLevel": 44,
         "currentQty": 55
-    },
-    "M004": {
-        "id": "M004",
-        "name": "u",
-        "category": "u",
-        "description": "u",
-        "maxStock": 77,
-        "reorderLevel": 66,
-        "currentQty": 77
-    },
-    "M005": {
-        "id": "M005",
-        "name": "f",
-        "category": "f",
-        "description": "f",
-        "maxStock": 88,
-        "reorderLevel": 66,
-        "currentQty": 88
-    },
-    "M006": {
-        "id": "M006",
-        "name": "t",
-        "category": "y",
-        "description": "u",
-        "maxStock": 55,
-        "reorderLevel": 44,
-        "currentQty": 55
     }
 }
