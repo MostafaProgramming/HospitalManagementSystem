@@ -2,10 +2,17 @@ import datetime
 
 from utils.id_generator import assign_patient_id            # This imports the function to assign a unique patient ID
 from utils.json_storage import load_data, save_data
+import utils.id_generator as id_gen
 
 
 # This loads the patients from the JSON file
-patients = load_data("data/patients.json")      
+patients = load_data("data/patients.json")
+
+# Set the ID counter based on existing data so new entries don't overwrite old ones
+if patients:
+    existing_nums = [int(k[3:]) for k in patients.keys() if k.startswith("P00")]
+    if existing_nums:
+        id_gen.current_patient_id = max(existing_nums) + 1      
 
 
 

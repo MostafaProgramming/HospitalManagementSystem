@@ -25,5 +25,14 @@
         "maxStock": 55,
         "reorderLevel": 44,
         "currentQty": 55
+    },
+    "M004": {
+        "id": "M004",
+        "name": "g",
+        "category": "g",
+        "description": "g",
+        "maxStock": 77,
+        "reorderLevel": 66,
+        "currentQty": 77
     }
 }

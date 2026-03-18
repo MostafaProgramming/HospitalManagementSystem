@@ -8,6 +8,7 @@ from auth.session import Session
 from utils.hashing import hash_password
 from utils.id_generator import assign_user_id, assign_session_id
 from utils.json_storage import load_data, save_data
+import utils.id_generator as id_gen
 
 from modules.ehr import ehr_menu
 from modules.medication_stock import medication_menu
@@ -24,6 +25,12 @@ users_table = {}
 for username, user_data in raw_users.items():
 
     users_table[username] = User.from_dict(user_data)
+
+# Set the ID counter based on existing data so new users don't overwrite old ones
+if raw_users:
+    existing_nums = [int(u["userID"][3:]) for u in raw_users.values() if u.get("userID", "").startswith("U00")]
+    if existing_nums:
+        id_gen.current_user_id = max(existing_nums) + 1
 
 
 sessions = {}
