@@ -43,5 +43,14 @@
         "maxStock": 88,
         "reorderLevel": 66,
         "currentQty": 88
+    },
+    "M006": {
+        "id": "M006",
+        "name": "t",
+        "category": "y",
+        "description": "u",
+        "maxStock": 55,
+        "reorderLevel": 44,
+        "currentQty": 55
     }
 }
