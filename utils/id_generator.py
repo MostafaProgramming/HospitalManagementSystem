@@ -24,14 +24,16 @@ def assign_patient_id():
     current_patient_id += 1
     return patient_id
 
-#def assign_medication_id():
-#    global current_medication_id
-#    medication_id = "M00" + str(current_medication_id)
-#    current_medication_id += 1
-#    return medication_id
 
 def assign_medication_id():
     global current_medication_id
-    med_id = "M" + str(current_medication_id).zfill(3)
+    medication_id = "M00" + str(current_medication_id)
     current_medication_id += 1
-    return med_id
+    return medication_id
+
+
+#def assign_medication_id():
+#    global current_medication_id
+#    med_id = "M" + str(current_medication_id).zfill(3)
+#    current_medication_id += 1
+#    return med_id
