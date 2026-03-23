@@ -21,6 +21,15 @@ def list_medical_images():
     return sorted(images.values(), key=lambda image: (image["patient_id"], image["captured_on"]))
 
 
+def get_medical_image(image_id):
+    images = _load_images()
+
+    if image_id not in images:
+        raise ValueError("Medical image not found.")
+
+    return images[image_id]
+
+
 def add_medical_image(patient_id, image_type, body_part, captured_on, file_path, uploaded_by, notes=""):
     patients = load_data("data/patients.json")
     images = _load_images()

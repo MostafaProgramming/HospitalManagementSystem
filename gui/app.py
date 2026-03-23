@@ -1778,6 +1778,8 @@ class ImagesTab(BaseTab):
         self.captured_on_var = tk.StringVar(value=datetime.date.today().strftime("%Y-%m-%d"))
         self.file_path_var = tk.StringVar()
         self.notes_var = tk.StringVar()
+        self.preview_caption_var = tk.StringVar(value="Choose or select an image to preview it here.")
+        self.preview_photo = None
 
         ttk.Label(form, text="Image ID", style="Panel.TLabel").grid(
             row=0,
@@ -1857,17 +1859,20 @@ class ImagesTab(BaseTab):
         ).grid(row=8, column=0, columnspan=3, sticky="ew", pady=(8, 0))
         form.columnconfigure(1, weight=1)
 
+        right = ttk.Frame(shell, style="App.TFrame")
+        right.pack(side="left", fill="both", expand=True)
+
         table = ttk.LabelFrame(
-            shell,
+            right,
             text="Medical Image Register",
             style="Section.TLabelframe",
             padding=12,
         )
-        table.pack(side="left", fill="both", expand=True)
+        table.pack(fill="both", expand=True, pady=(0, 10))
 
         self.tree = self._make_tree(
             table,
-            ("id", "patient", "type", "body", "date", "path"),
+            ("id", "patient", "type", "body", "date", "image"),
         )
         for column, heading, width in (
             ("id", "Image ID", 110),
@@ -1875,11 +1880,40 @@ class ImagesTab(BaseTab):
             ("type", "Type", 120),
             ("body", "Body Part", 140),
             ("date", "Captured On", 120),
-            ("path", "File Path", 320),
+            ("image", "Image", 220),
         ):
             self.tree.heading(column, text=heading)
             self.tree.column(column, width=width, anchor="center")
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
+
+        preview_frame = ttk.LabelFrame(
+            right,
+            text="Image Preview",
+            style="Section.TLabelframe",
+            padding=12,
+        )
+        preview_frame.pack(fill="both", expand=True)
+
+        self.preview_label = tk.Label(
+            preview_frame,
+            bg="white",
+            fg=MUTED,
+            text="No image selected",
+            font=("Segoe UI", 10),
+            width=48,
+            height=16,
+            relief="solid",
+            bd=1,
+            anchor="center",
+            justify="center",
+        )
+        self.preview_label.pack(fill="both", expand=True)
+        ttk.Label(
+            preview_frame,
+            textvariable=self.preview_caption_var,
+            style="SubHeader.TLabel",
+            wraplength=520,
+        ).pack(anchor="w", pady=(8, 0))
 
     def browse_file(self):
         selected_path = filedialog.askopenfilename(
@@ -1891,6 +1925,7 @@ class ImagesTab(BaseTab):
         )
         if selected_path:
             self.file_path_var.set(str(Path(selected_path)))
+            self._update_preview(selected_path)
 
     def add_image(self):
         try:
@@ -1908,8 +1943,8 @@ class ImagesTab(BaseTab):
             return
 
         self.show_info("Medical image added", f'Created image record {image["image_id"]}.')
+        self._update_preview(image["file_path"])
         self.image_id_var.set("")
-        self.file_path_var.set("")
         self.notes_var.set("")
         self.app_frame.refresh_all()
 
@@ -1926,6 +1961,8 @@ class ImagesTab(BaseTab):
             return
 
         self.image_id_var.set("")
+        self.file_path_var.set("")
+        self._clear_preview()
         self.app_frame.refresh_all()
 
     def on_select(self, _event):
@@ -1933,18 +1970,20 @@ class ImagesTab(BaseTab):
         if not selected:
             return
 
-        image_id, patient_id, image_type, body_part, captured_on, file_path = (
-            self.tree.item(selected[0], "values")
-        )
+        image_id = self.tree.item(selected[0], "values")[0]
+        image_record = medical_images.get_medical_image(image_id)
+        patient_id = image_record["patient_id"]
         self.image_id_var.set(image_id)
         patient = ehr.get_patient(patient_id)
         self.patient_var.set(
             f'{patient_id} - {patient["first_name"]} {patient["last_name"]}'
         )
-        self.image_type_var.set(image_type)
-        self.body_part_var.set(body_part)
-        self.captured_on_var.set(captured_on)
-        self.file_path_var.set(file_path)
+        self.image_type_var.set(image_record["image_type"])
+        self.body_part_var.set(image_record["body_part"])
+        self.captured_on_var.set(image_record["captured_on"])
+        self.file_path_var.set(image_record["file_path"])
+        self.notes_var.set(image_record.get("notes", ""))
+        self._update_preview(image_record["file_path"])
 
     def refresh(self):
         self.patient_choice.configure(values=self.app_frame.patient_options())
@@ -1959,9 +1998,47 @@ class ImagesTab(BaseTab):
                     image["image_type"],
                     image["body_part"],
                     image["captured_on"],
-                    image["file_path"],
+                    Path(image["file_path"]).name if image["file_path"] else "No file",
                 ),
             )
+
+    def _clear_preview(self, message="No image selected"):
+        self.preview_photo = None
+        self.preview_label.configure(image="", text=message)
+        self.preview_caption_var.set("Choose or select an image to preview it here.")
+
+    def _update_preview(self, file_path):
+        path = Path(file_path)
+
+        if not file_path or not path.exists():
+            self._clear_preview("Image file not found")
+            return
+
+        try:
+            photo = tk.PhotoImage(file=str(path))
+        except tk.TclError:
+            self.preview_photo = None
+            self.preview_label.configure(
+                image="",
+                text="Preview unavailable for this file type.\nUse PNG or GIF for built-in preview.",
+            )
+            self.preview_caption_var.set(str(path))
+            return
+
+        max_width = 520
+        max_height = 320
+        width = photo.width()
+        height = photo.height()
+        width_scale = max(1, (width + max_width - 1) // max_width)
+        height_scale = max(1, (height + max_height - 1) // max_height)
+        scale = max(width_scale, height_scale)
+
+        if scale > 1:
+            photo = photo.subsample(scale, scale)
+
+        self.preview_photo = photo
+        self.preview_label.configure(image=self.preview_photo, text="")
+        self.preview_caption_var.set(str(path))
 
 
 class RemindersTab(BaseTab):
