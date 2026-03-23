@@ -1868,7 +1868,7 @@ class ImagesTab(BaseTab):
             style="Section.TLabelframe",
             padding=12,
         )
-        table.pack(fill="both", expand=True, pady=(0, 10))
+        table.pack(fill="x", pady=(0, 10))
 
         self.tree = self._make_tree(
             table,
@@ -1884,6 +1884,7 @@ class ImagesTab(BaseTab):
         ):
             self.tree.heading(column, text=heading)
             self.tree.column(column, width=width, anchor="center")
+        self.tree.configure(height=7)
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
         preview_frame = ttk.LabelFrame(
@@ -1900,8 +1901,8 @@ class ImagesTab(BaseTab):
             fg=MUTED,
             text="No image selected",
             font=("Segoe UI", 10),
-            width=48,
-            height=16,
+            width=64,
+            height=24,
             relief="solid",
             bd=1,
             anchor="center",
@@ -2025,8 +2026,8 @@ class ImagesTab(BaseTab):
             self.preview_caption_var.set(str(path))
             return
 
-        max_width = 520
-        max_height = 320
+        max_width = 900
+        max_height = 520
         width = photo.width()
         height = photo.height()
         width_scale = max(1, (width + max_width - 1) // max_width)
