@@ -1,153 +1,141 @@
 import datetime
 
-from utils.id_generator import assign_patient_id            # This imports the function to assign a unique patient ID
+from utils.id_generator import assign_patient_id
 from utils.json_storage import load_data, save_data
-import utils.id_generator as id_gen
 
 
-# This loads the patients from the JSON file
-patients = load_data("data/patients.json")
-
-# Set the ID counter based on existing data so new entries don't overwrite old ones
-if patients:
-    existing_nums = [int(k[3:]) for k in patients.keys() if k.startswith("P00")]
-    if existing_nums:
-        id_gen.current_patient_id = max(existing_nums) + 1      
+DATE_FORMAT = "%Y-%m-%d"
 
 
+def _load_patients():
+    return load_data("data/patients.json")
 
-# This function adds a new patient to the patients dictionary
-def add_patient():
 
-    # This gets the patient details from the user
-    first_name = input("Enter first name: ")
-    last_name = input("Enter last name: ")
-    email = input("Enter email: ")
-    phone = input("Enter phone number: ")
-    dob = input("Enter date of birth: ")
-    condition = input("Enter medical condition: ")
-    medication = input("Enter medication: ")
+def _save_patients(patients):
+    save_data("data/patients.json", patients)
 
-    # This assigns a unique patient ID
-    patient_id = assign_patient_id()
 
-    # 29 - 43 = These lines create a dictionary with the patient details
+def _ensure_patient_exists(patients, patient_id):
+    if patient_id not in patients:
+        raise ValueError("Patient not found.")
+
+
+def _validate_patient_fields(first_name, last_name, dob):
+    if not first_name.strip():
+        raise ValueError("First name is required.")
+
+    if not last_name.strip():
+        raise ValueError("Last name is required.")
+
+    try:
+        datetime.datetime.strptime(dob.strip(), DATE_FORMAT)
+    except ValueError as exc:
+        raise ValueError("Date of birth must use YYYY-MM-DD.") from exc
+
+
+def list_patients(search_text=""):
+    patients = _load_patients()
+    items = list(patients.values())
+
+    if search_text:
+        query = search_text.strip().lower()
+        items = [
+            patient
+            for patient in items
+            if query in patient.get("patient_id", "").lower()
+            or query in patient.get("first_name", "").lower()
+            or query in patient.get("last_name", "").lower()
+            or query in patient.get("condition", "").lower()
+        ]
+
+    return sorted(items, key=lambda patient: patient["patient_id"])
+
+
+def get_patient(patient_id):
+    patients = _load_patients()
+    _ensure_patient_exists(patients, patient_id)
+    return patients[patient_id]
+
+
+def add_patient(first_name, last_name, email, phone, dob, condition, medication, notes=""):
+    _validate_patient_fields(first_name, last_name, dob)
+
+    patients = _load_patients()
+    patient_id = assign_patient_id(patients)
+    timestamp = str(datetime.datetime.now())
+
     patient_data = {
-
         "patient_id": patient_id,
-        "first_name": first_name,
-        "last_name": last_name,
-        "email": email,
-        "phone": phone,
-        "dob": dob,
-        "condition": condition,
-        "medication": medication,
-        "created_at": str(datetime.datetime.now()),
-        "updated_at": str(datetime.datetime.now())
-
+        "first_name": first_name.strip().title(),
+        "last_name": last_name.strip().title(),
+        "email": email.strip(),
+        "phone": phone.strip(),
+        "dob": dob.strip(),
+        "condition": condition.strip(),
+        "medication": medication.strip(),
+        "notes": notes.strip(),
+        "created_at": timestamp,
+        "updated_at": timestamp,
     }
 
     patients[patient_id] = patient_data
-
-    # This saves the updated patients dictionary to the JSON file.
-    save_data("data/patients.json", patients)
-
-    # This prints a success message with the patient ID.
-    print("\nPatient created successfully")
-    print("Patient ID:", patient_id)
+    _save_patients(patients)
+    return patient_data
 
 
+def update_patient(patient_id, first_name, last_name, email, phone, dob, condition, medication, notes=""):
+    _validate_patient_fields(first_name, last_name, dob)
 
-# This function displays all patients in the patients dictionary.
-def view_patients():
-
-    if len(patients) == 0:
-
-        print("\nNo patients found")
-        return
-
-    # This iterates through the patients dictionary and prints the details of each patient.
-    for patient in patients.values():
-
-        print("\n----------------------")
-        print("Patient ID:", patient["patient_id"])
-        print("Name:", patient["first_name"], patient["last_name"])
-        print("Email:", patient["email"])
-        print("Phone:", patient["phone"])
-        print("DOB:", patient["dob"])
-        print("Condition:", patient["condition"])
-        print("Medication:", patient["medication"])
-
-
-# This function lets the user update a patient's details.
-def update_patient():
-
-    patient_id = input("Enter patient ID to update: ")
-
-    # This checks if the patient ID exists in the patients dictionary.
-    if patient_id not in patients:
-        print("Patient not found")
-        return
+    patients = _load_patients()
+    _ensure_patient_exists(patients, patient_id)
 
     patient = patients[patient_id]
+    patient.update(
+        {
+            "first_name": first_name.strip().title(),
+            "last_name": last_name.strip().title(),
+            "email": email.strip(),
+            "phone": phone.strip(),
+            "dob": dob.strip(),
+            "condition": condition.strip(),
+            "medication": medication.strip(),
+            "notes": notes.strip(),
+            "updated_at": str(datetime.datetime.now()),
+        }
+    )
 
-    information=["first_name","last_name","email","phone","condition"]
-    for info in information:
-        new_info= input("Enter new "+info+" : ")
-        if new_info != "":
-            patient[info]=new_info
-
-    patient["updated_at"] = str(datetime.datetime.now())
-    save_data("data/patients.json", patients)
-    print("Patient updated successfully")
+    _save_patients(patients)
+    return patient
 
 
-# This function deletes a patient from the patients dictionary.
-def delete_patient():
+def delete_patient(patient_id):
+    patients = _load_patients()
+    _ensure_patient_exists(patients, patient_id)
 
-    patient_id = input("Enter patient ID to delete: ")
+    bookings = load_data("data/bookings.json")
+    reminders = load_data("data/reminders.json")
+    medical_image_records = load_data("data/medical_images.json")
 
-    if patient_id in patients:
+    deleted_patient = patients.pop(patient_id)
 
-        del patients[patient_id]
+    bookings = {
+        booking_id: booking
+        for booking_id, booking in bookings.items()
+        if booking.get("patient_id") != patient_id
+    }
+    reminders = {
+        reminder_id: reminder
+        for reminder_id, reminder in reminders.items()
+        if reminder.get("patient_id") != patient_id
+    }
+    medical_image_records = {
+        image_id: image
+        for image_id, image in medical_image_records.items()
+        if image.get("patient_id") != patient_id
+    }
 
-        save_data("data/patients.json", patients)
-
-        print("Patient deleted")
-
-    else:
-
-        print("Patient not found")
-
-# This function displays the EHR menu and lets the users choose the following options.
-def ehr_menu():
-
-    while True:
-
-        print("\n---- EHR SYSTEM ----")
-
-        print("1. Add patient")
-        print("2. View patients")
-        print("3. Update patient")
-        print("4. Delete patient")
-        print("5. Back")
-
-        choice = input("Enter choice: ")
-
-        if choice == "1":
-            add_patient()
-
-        elif choice == "2":
-            view_patients()
-
-        elif choice == "3":
-            update_patient()
-
-        elif choice == "4":
-            delete_patient()
-
-        elif choice == "5":
-            break
-
-        else:
-            print("Invalid choice")
+    _save_patients(patients)
+    save_data("data/bookings.json", bookings)
+    save_data("data/reminders.json", reminders)
+    save_data("data/medical_images.json", medical_image_records)
+    return deleted_patient

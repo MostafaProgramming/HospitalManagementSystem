@@ -2,283 +2,157 @@ import datetime
 import random
 import string
 
-from auth.user import User
 from auth.session import Session
-
 from utils.hashing import hash_password
-from utils.id_generator import assign_user_id, assign_session_id
+from utils.id_generator import assign_session_id, assign_user_id
 from utils.json_storage import load_data, save_data
-import utils.id_generator as id_gen
-
-from modules.ehr import ehr_menu
-from modules.medication_stock import medication_menu
-from modules.room_booking import room_booking_menu  
 
 
-# -----------------------------
-# LOAD USERS FROM JSON
-# -----------------------------
-
-raw_users = load_data("data/users.json")
-
-users_table = {}
-
-for username, user_data in raw_users.items():
-
-    users_table[username] = User.from_dict(user_data)
-
-# Set the ID counter based on existing data so new users don't overwrite old ones
-if raw_users:
-    existing_nums = [int(u["userID"][3:]) for u in raw_users.values() if u.get("userID", "").startswith("U00")]
-    if existing_nums:
-        id_gen.current_user_id = max(existing_nums) + 1
-
-
-sessions = {}
+SESSION_DURATION_MINUTES = 20
 
 current_user = None
 current_session = None
-
-config = load_data("data/config.json")
-Signup_key = config.get("signup_key", None)
-session_duration_minutes = 20
+sessions = {}
 
 
-# -----------------------------
-# SAVE USERS FUNCTION
-# -----------------------------
-
-def save_users():
-
-    data = {}
-
-    for username, user_obj in users_table.items():
-
-        data[username] = user_obj.to_dict()
-
-    save_data("data/users.json", data)
+def _load_users():
+    return load_data("data/users.json")
 
 
-# -----------------------------
-# SIGNUP
-# -----------------------------
+def _save_users(users):
+    save_data("data/users.json", users)
 
-def enteruser():
 
-    global Signup_key
+def _load_config():
+    return load_data("data/config.json")
 
-    if len(users_table) == 0:
 
-        Signup_key = input("Create a signup key: ")
-        save_data("data/config.json", {"signup_key": Signup_key})
-        print("\nSignup key created:", Signup_key)
+def _save_config(config):
+    save_data("data/config.json", config)
 
+
+def _find_username(users, username):
+    lowered = username.strip().lower()
+    for existing_username in users:
+        if existing_username.lower() == lowered:
+            return existing_username
+    return None
+
+
+def has_users():
+    return len(_load_users()) > 0
+
+
+def list_users():
+    users = _load_users()
+    return sorted(users.values(), key=lambda user: user["username"].lower())
+
+
+def register_user(role, username, password, signup_key=None):
+    users = _load_users()
+    config = _load_config()
+
+    role = role.strip().title()
+    username = username.strip()
+    signup_key = (signup_key or "").strip()
+
+    if not role:
+        raise ValueError("Role is required.")
+
+    if not username:
+        raise ValueError("Username is required.")
+
+    if _find_username(users, username):
+        raise ValueError("Username already exists.")
+
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters long.")
+
+    if users:
+        configured_key = config.get("signup_key", "").strip()
+        if not configured_key:
+            raise ValueError("No signup key is configured.")
+        if signup_key != configured_key:
+            raise ValueError("The signup key is incorrect.")
     else:
+        if not signup_key:
+            raise ValueError("The first user must create a signup key.")
+        config["signup_key"] = signup_key
+        _save_config(config)
 
-        if Signup_key is None:
-            Signup_key = input("No signup key found. Set a new signup key: ")
-            save_data("data/config.json", {"signup_key": Signup_key})
-            print("\nNew signup key set.")
-            return True
+    salt = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+    user_id = assign_user_id(users)
 
-        entered_key = input("Enter the signup key: ")
+    users[username] = {
+        "userID": user_id,
+        "username": username,
+        "salt": salt,
+        "password_hash": hash_password(password + salt),
+        "role": role,
+        "created_at": str(datetime.datetime.now()),
+        "last_login_at": None,
+        "active": False,
+    }
 
-        if entered_key != Signup_key:
-
-            print("Invalid signup key")
-            return False
-
-
-    role = input("\nEnter role (Doctor, Nurse etc): ")
-    username = input("Enter username: ")
-    password = input("Enter password: ")
-
-    while username in users_table:
-
-        print("Username already exists")
-        username = input("Enter another username:")
-
-    while len(password) < 8:
-
-        print("Password must be at least 8 characters")
-        password = input("Enter password:")
+    _save_users(users)
+    return users[username]
 
 
-    salt = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
-
-    password_hash = hash_password(password + salt)
-
-    user_id = assign_user_id()
-
-    user_obj = User(user_id, username, salt, password_hash, role)
-
-    users_table[username] = user_obj
-
-    save_users()
-
-    print("\nUser created successfully")
-    print("User ID:", user_id)
-
-    return True
-
-
-# -----------------------------
-# LOGIN
-# -----------------------------
-
-def login():
-
-    global current_user
+def authenticate_user(username, password):
     global current_session
-
-    username = input("Enter username: ")
-    password = input("Enter password: ")
-
-    matched_username = next((u for u in users_table if u.lower() == username.lower()), None)
-
-    if matched_username:
-
-        user_obj = users_table[matched_username]
-
-        test_hash = hash_password(password + user_obj.salt)
-
-        if test_hash == user_obj.password_hash:
-
-            print("\nLogin successful")
-
-            user_obj.last_login_at = str(datetime.datetime.now())
-            user_obj.active = True
-
-            save_users()
-
-            current_user = user_obj
-
-            token = assign_session_id()
-
-            session_obj = Session(token, username, session_duration_minutes)
-
-            sessions[token] = session_obj
-            current_session = session_obj
-
-            print("\nSession created")
-            print("Session token:", session_obj.token)
-
-            return True
-
-        else:
-
-            print("Incorrect password")
-            return False
-
-    else:
-
-        print("Username not found")
-        return False
-
-
-# -----------------------------
-# LOGOUT
-# -----------------------------
-
-def logout():
-
     global current_user
+
+    users = _load_users()
+    matched_username = _find_username(users, username)
+
+    if not matched_username:
+        raise ValueError("Username not found.")
+
+    user = users[matched_username]
+    test_hash = hash_password(password + user["salt"])
+
+    if test_hash != user["password_hash"]:
+        raise ValueError("Incorrect password.")
+
+    for existing_username, record in users.items():
+        record["active"] = existing_username == matched_username
+
+    user["last_login_at"] = str(datetime.datetime.now())
+    user["active"] = True
+    _save_users(users)
+
+    token = assign_session_id(sessions)
+    session = Session(token, matched_username, SESSION_DURATION_MINUTES)
+    sessions[token] = session
+
+    current_session = session
+    current_user = dict(user)
+    return dict(user)
+
+
+def logout_user():
     global current_session
+    global current_user
 
     if current_user:
-
-        current_user.active = False
-
-        save_users()
+        users = _load_users()
+        username = current_user["username"]
+        if username in users:
+            users[username]["active"] = False
+            _save_users(users)
 
     if current_session:
-
         current_session.active = False
 
     current_user = None
     current_session = None
 
-    print("\nLogged out\n")
+
+def get_current_user():
+    return dict(current_user) if current_user else None
 
 
-# -----------------------------
-# MAIN MENU
-# -----------------------------
-
-def main_menu():
-
-    while True:
-
-        print("\n--- HOSPITAL MANAGEMENT SYSTEM ---")
-
-        print("1. EHR")
-        print("2. Medication Stock")
-        print("3. Staff Availability")
-        print("4. Room Bookings")
-        print("5. Medical Images")
-        print("6. Medication Reminders")
-        print("7. Logout")
-
-        option = input("Enter choice: ")
-
-        if option == "1":
-            ehr_menu()
-
-        elif option == "2":
-            medication_menu()
-
-        elif option == "4":
-            room_booking_menu()
-
-        elif option == "7":
-            logout()
-            break
-
-        else:
-
-            print("Feature not implemented yet")
-
-
-# -----------------------------
-# AUTH MENU
-# -----------------------------
-
-def auth_menu():
-
-    while True:
-
-        print("\n1. Login")
-        print("2. Signup")
-        print("3. Exit")
-
-        choice = input("Enter choice: ")
-
-        if choice == "1":
-
-            if len(users_table) == 0:
-
-                print("No users exist. Please signup first")
-
-            else:
-
-                success = login()
-
-                if success:
-
-                    main_menu()
-
-        elif choice == "2":
-
-            success = enteruser()
-
-            if success:
-
-                main_menu()
-
-        elif choice == "3":
-
-            break
-
-        else:
-
-            print("Invalid choice")
+def get_signup_key_hint():
+    if has_users():
+        return "Enter the staff signup key."
+    return "Create the signup key for future staff accounts."

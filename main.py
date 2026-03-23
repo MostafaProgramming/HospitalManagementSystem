@@ -1,11 +1,5 @@
-from auth.auth_system import auth_menu
+from gui.app import launch_app
 
 
-auth_menu()
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    launch_app()

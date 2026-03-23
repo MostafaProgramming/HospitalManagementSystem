@@ -1,244 +1,135 @@
-from utils.json_storage import load_data, save_data
+import datetime
+
 from utils.id_generator import assign_medication_id
-
-# Load medications from JSON file
-medications = load_data("data/medications.json")
+from utils.json_storage import load_data, save_data
 
 
-# -----------------------------
-# SAVE MEDICATIONS
-# -----------------------------
+def _load_medications():
+    return load_data("data/medications.json")
 
 
-def save_medications():
-    """Convert Medication objects to dictionaries (if needed) and save to JSON"""
-    data = {}
-    # Loop through all medications and convert to dictionary only if not already a dictionary
-    for med_id, medication in medications.items():
-        # Check if medication is a dictionary and skip to_dict() if it's already in the correct format
-        if isinstance(medication, dict):
-            data[med_id] = (
-                medication  # Use the medication as is if it’s already a dictionary
-            )
-        else:
-            data[med_id] = (
-                medication.to_dict()
-            )  # Convert to dictionary using to_dict() method
-    save_data("data/medications.json", data)  # Save it without overwriting
+def _save_medications(medications):
+    save_data("data/medications.json", medications)
 
 
-# -----------------------------
-# ADD MEDICATION
-# -----------------------------
+def list_medications(low_stock_only=False):
+    medications = load_data("data/medications.json")
+    items = list(medications.values())
+
+    if low_stock_only:
+        items = [
+            medication
+            for medication in items
+            if medication["currentQty"] <= medication["reorderLevel"]
+        ]
+
+    return sorted(items, key=lambda medication: medication["id"])
 
 
-def add_medication():
-    name = input("Enter medication name: ")
-    category = input("Enter medication category (e.g painkiller, antibiotic): ")
-    description = input("Enter medication description: ")
+def get_medication(medication_id):
+    medications = _load_medications()
+    if medication_id not in medications:
+        raise ValueError("Medication not found.")
+    return medications[medication_id]
 
-    # Input validation for max_stock
-    while True:
-        try:
-            max_stock = int(input("Enter maximum stock level: "))
-            break  # Exit the loop if the input is valid
-        except ValueError:
-            print("Please enter a valid integer for maximum stock level.")
 
-    # Input validation for reorder_level
-    while True:
-        try:
-            reorder_level = int(input("Enter reorder level: "))
-            if reorder_level >= max_stock:
-                print("Reorder level must be lower than max stock. Please try again.")
-            else:
-                break  # Exit the loop if the input is valid
-        except ValueError:
-            print("Please enter a valid integer for reorder level.")
+def add_medication(name, category, description, max_stock, reorder_level, initial_qty=None):
+    name = name.strip()
+    category = category.strip()
+    description = description.strip()
 
-    # Generate a unique medication ID
-    med_id = assign_medication_id()
+    if not name:
+        raise ValueError("Medication name is required.")
 
-    # Create the medication object
+    if max_stock <= 0:
+        raise ValueError("Maximum stock must be greater than 0.")
+
+    if reorder_level < 0:
+        raise ValueError("Reorder level cannot be negative.")
+
+    if reorder_level >= max_stock:
+        raise ValueError("Reorder level must be lower than maximum stock.")
+
+    if initial_qty is None:
+        initial_qty = max_stock
+
+    if initial_qty < 0 or initial_qty > max_stock:
+        raise ValueError("Initial quantity must be between 0 and the maximum stock.")
+
+    medications = _load_medications()
+    med_id = assign_medication_id(medications)
+
     medication = {
         "id": med_id,
-        "name": name,
-        "category": category,
+        "name": name.title(),
+        "category": category.title(),
         "description": description,
-        "maxStock": max_stock,
-        "reorderLevel": reorder_level,
-        "currentQty": max_stock,  # Initial stock equals max stock
+        "maxStock": int(max_stock),
+        "reorderLevel": int(reorder_level),
+        "currentQty": int(initial_qty),
+        "updated_at": str(datetime.datetime.now()),
     }
 
-    # Add medication to the medications dictionary
     medications[med_id] = medication
-
-    # Save the updated medications dictionary to the JSON file
-    save_medications()
-
-    # Confirm medication was added
-    print("Medication added successfully")
-    print("Medication ID:", med_id)
+    _save_medications(medications)
+    return medication
 
 
-# -----------------------------
-# VIEW STOCK LEVELS
-# -----------------------------
+def resupply_medication(medication_id, amount):
+    medications = _load_medications()
+
+    if medication_id not in medications:
+        raise ValueError("Medication not found.")
+
+    if amount <= 0:
+        raise ValueError("Resupply amount must be greater than 0.")
+
+    medication = medications[medication_id]
+    medication["currentQty"] = min(
+        medication["currentQty"] + amount,
+        medication["maxStock"],
+    )
+    medication["updated_at"] = str(datetime.datetime.now())
+
+    _save_medications(medications)
+    return medication
 
 
-def view_medications():
-    if len(medications) == 0:
-        print("No medications registered")
-        return
-
-    for med in medications.values():
-        print("\n----------------------")
-        print("ID:", med["id"])
-        print("Name:", med["name"])
-        print("Category:", med["category"])
-        print("Description:", med["description"])
-        print("Stock:", str(med["currentQty"]) + "/" + str(med["maxStock"]))
-
-        # Low stock warning
-        if med["currentQty"] < med["reorderLevel"]:
-            print("Warning, LOW STOCK")
-
-
-# -----------------------------
-# RESUPPLY MEDICATION
-# -----------------------------
-
-
-def resupply_medication():
-    med_id = input("Enter medication ID: ")
-
-    if med_id not in medications:
-        print("Medication not found")
-        return
-
-    # Input validation for amount
-    while True:
-        try:
-            amount = int(input("Enter amount to add: "))
-            if amount <= 0:
-                print("Amount must be a positive number")
-            else:
-                break
-        except ValueError:
-            print("Please enter a valid integer for the amount.")
-
-    med = medications[med_id]
-
-    # Add the resupplied amount to current stock
-    med["currentQty"] += amount
-
-    # Ensure current stock doesn't exceed max stock
-    if med["currentQty"] > med["maxStock"]:
-        med["currentQty"] = med["maxStock"]
-
-    # Save the updated medications dictionary to the JSON file
-    save_medications()
-
-    # Confirm resupply
-    print(f"{amount} units of {med['name']} resupplied")
-    print("Current stock:", med["currentQty"])
-
-
-# -----------------------------
-# USE MEDICATION
-# -----------------------------
-
-
-def use_medication():
+def administer_medication(medication_id, patient_id, dosage):
+    medications = _load_medications()
     patients = load_data("data/patients.json")
 
-    med_id = input("Enter medication ID used: ")
+    if medication_id not in medications:
+        raise ValueError("Medication not found.")
 
-    if med_id not in medications:
-        print("Medication not found")
-        return
-
-    # Enter patient ID
-    patient_id = input("Enter patient ID: ")
-
-    # Check if the patient ID is valid
     if patient_id not in patients:
-        print("Patient not found")
-        return
+        raise ValueError("Patient not found.")
 
-    # Input validation for dosage amount (between 1 and 10)
-    while True:
-        try:
-            dosage = int(
-                input(f"Enter dosage amount for {medications[med_id]['name']} (1-10): ")
-            )
-            if 1 <= dosage <= 10:
-                break
-            else:
-                print("Dosage must be between 1 and 10.")
-        except ValueError:
-            print("Please enter a valid integer for dosage.")
+    if dosage <= 0:
+        raise ValueError("Dosage must be greater than 0.")
 
-    # Check if enough stock is available for the dosage
-    if medications[med_id]["currentQty"] >= dosage:
-        # Administer medication
-        medications[med_id]["currentQty"] -= dosage
+    medication = medications[medication_id]
 
-        # Update the patient's record
-        if "medications" not in patients[patient_id]:
-            patients[patient_id]["medications"] = []
+    if medication["currentQty"] < dosage:
+        raise ValueError("Not enough stock to administer that dosage.")
 
-        patients[patient_id]["medications"].append(
-            {
-                "medication_id": med_id,
-                "medication_name": medications[med_id]["name"],
-                "dosage": dosage,
-            }
-        )
+    medication["currentQty"] -= dosage
+    medication["updated_at"] = str(datetime.datetime.now())
 
-        # Save the updated medications and patients dictionaries to JSON
-        save_medications()
-        save_data("data/patients.json", patients)
+    patient = patients[patient_id]
+    administrations = patient.get("medications", [])
+    administrations.append(
+        {
+            "medication_id": medication_id,
+            "medication_name": medication["name"],
+            "dosage": dosage,
+            "administered_at": str(datetime.datetime.now()),
+        }
+    )
+    patient["medications"] = administrations
+    patient["medication"] = medication["name"]
+    patient["updated_at"] = str(datetime.datetime.now())
 
-        print(
-            f"{dosage} units of {medications[med_id]['name']} administered to patient {patient_id}."
-        )
-        print("Remaining stock:", medications[med_id]["currentQty"])
-    else:
-        print("Not enough stock to administer that dosage.")
-
-
-# -----------------------------
-# MEDICATION MENU
-# -----------------------------
-
-
-def medication_menu():
-    while True:
-        print("\n---- MEDICATION STOCK SYSTEM ----")
-
-        print("1 Add medication")
-        print("2 View stock levels")
-        print("3 Resupply medication")
-        print("4 Use medication")
-        print("5 Back")
-
-        choice = input("Enter choice: ")
-
-        if choice == "1":
-            add_medication()
-
-        elif choice == "2":
-            view_medications()
-
-        elif choice == "3":
-            resupply_medication()
-
-        elif choice == "4":
-            use_medication()
-
-        elif choice == "5":
-            break
-
-        else:
-            print("Invalid choice")
+    _save_medications(medications)
+    save_data("data/patients.json", patients)
+    return medication, patient

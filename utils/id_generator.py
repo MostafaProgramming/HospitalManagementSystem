@@ -1,48 +1,97 @@
+import re
+
+
 current_user_id = 1
 current_session_id = 1
 current_patient_id = 1
 current_medication_id = 1
 current_room_id = 1
 current_booking_id = 1
+current_availability_id = 1
+current_image_id = 1
+current_reminder_id = 1
 
 
-def assign_user_id():
-    global current_user_id
-    user_id = "U" + str(current_user_id).zfill(3)
-    current_user_id += 1
-    return user_id
+def generate_prefixed_id(prefix, records=None, width=3):
+    if records:
+        highest_value = 0
+        pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+
+        for key in records.keys():
+            match = pattern.match(key)
+            if match:
+                highest_value = max(highest_value, int(match.group(1)))
+
+        return f"{prefix}{highest_value + 1:0{width}d}"
+
+    return None
 
 
-def assign_session_id():
-    global current_session_id
-    session_id = "S" + str(current_session_id).zfill(3)
-    current_session_id += 1
-    return session_id
+def _assign_from_counter(prefix, counter_name, width=3):
+    globals_dict = globals()
+    identifier = f"{prefix}{globals_dict[counter_name]:0{width}d}"
+    globals_dict[counter_name] += 1
+    return identifier
 
 
-def assign_patient_id():
-    global current_patient_id
-    patient_id = "P" + str(current_patient_id).zfill(3)
-    current_patient_id += 1
-    return patient_id
+def assign_user_id(records=None):
+    generated = generate_prefixed_id("U", records)
+    if generated:
+        return generated
+    return _assign_from_counter("U", "current_user_id")
 
 
-def assign_medication_id():
-    global current_medication_id
-    medication_id = "M" + str(current_medication_id).zfill(3)
-    current_medication_id += 1
-    return medication_id
+def assign_session_id(records=None):
+    generated = generate_prefixed_id("S", records)
+    if generated:
+        return generated
+    return _assign_from_counter("S", "current_session_id")
 
 
-def assign_room_id():
-    global current_room_id
-    room_id = "R" + str(current_room_id).zfill(3)
-    current_room_id += 1
-    return room_id
+def assign_patient_id(records=None):
+    generated = generate_prefixed_id("P", records)
+    if generated:
+        return generated
+    return _assign_from_counter("P", "current_patient_id")
 
 
-def assign_booking_id():
-    global current_booking_id
-    booking_id = "B" + str(current_booking_id).zfill(3)
-    current_booking_id += 1
-    return booking_id
+def assign_medication_id(records=None):
+    generated = generate_prefixed_id("M", records)
+    if generated:
+        return generated
+    return _assign_from_counter("M", "current_medication_id")
+
+
+def assign_room_id(records=None):
+    generated = generate_prefixed_id("R", records)
+    if generated:
+        return generated
+    return _assign_from_counter("R", "current_room_id")
+
+
+def assign_booking_id(records=None):
+    generated = generate_prefixed_id("B", records)
+    if generated:
+        return generated
+    return _assign_from_counter("B", "current_booking_id")
+
+
+def assign_availability_id(records=None):
+    generated = generate_prefixed_id("A", records)
+    if generated:
+        return generated
+    return _assign_from_counter("A", "current_availability_id")
+
+
+def assign_image_id(records=None):
+    generated = generate_prefixed_id("IMG", records)
+    if generated:
+        return generated
+    return _assign_from_counter("IMG", "current_image_id")
+
+
+def assign_reminder_id(records=None):
+    generated = generate_prefixed_id("REM", records)
+    if generated:
+        return generated
+    return _assign_from_counter("REM", "current_reminder_id")
