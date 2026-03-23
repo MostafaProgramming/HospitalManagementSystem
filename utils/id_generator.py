@@ -33,11 +33,13 @@ def assign_medication_id():
     current_medication_id += 1
     return medication_id
 
+
 def assign_room_id():
     global current_room_id
     room_id = "R" + str(current_room_id).zfill(3)
     current_room_id += 1
     return room_id
+
 
 def assign_booking_id():
     global current_booking_id

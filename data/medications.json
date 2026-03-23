@@ -15,7 +15,7 @@
         "description": "q",
         "maxStock": 56,
         "reorderLevel": 45,
-        "currentQty": 56
+        "currentQty": 51
     },
     "M003": {
         "id": "M003",

@@ -11,7 +11,7 @@ bookings = load_data("data/bookings.json")
 # SAVE ROOMS
 # -----------------------------
 def save_rooms():
-    """ Save room data to the JSON file """
+    """Save room data to the JSON file"""
     save_data("data/rooms.json", rooms)
 
 
@@ -19,7 +19,7 @@ def save_rooms():
 # SAVE BOOKINGS
 # -----------------------------
 def save_bookings():
-    """ Save booking data to the JSON file """
+    """Save booking data to the JSON file"""
     save_data("data/bookings.json", bookings)
 
 
@@ -32,15 +32,12 @@ class Room:
         self.room_label = room_label
 
     def to_dict(self):
-        """ Convert Room object to dictionary """
-        return {
-            "room_id": self.room_id,
-            "room_label": self.room_label
-        }
+        """Convert Room object to dictionary"""
+        return {"room_id": self.room_id, "room_label": self.room_label}
 
     @staticmethod
     def from_dict(data):
-        """ Convert dictionary to Room object """
+        """Convert dictionary to Room object"""
         return Room(data["room_id"], data["room_label"])
 
 
@@ -57,26 +54,26 @@ class Booking:
         self.end_time = end_time
 
     def to_dict(self):
-        """ Convert Booking object to dictionary """
+        """Convert Booking object to dictionary"""
         return {
             "booking_id": self.booking_id,
             "room_id": self.room_id,
             "staff_id": self.staff_id,
             "patient_id": self.patient_id,
             "start_time": self.start_time,
-            "end_time": self.end_time
+            "end_time": self.end_time,
         }
 
     @staticmethod
     def from_dict(data):
-        """ Convert dictionary to Booking object """
+        """Convert dictionary to Booking object"""
         return Booking(
             data["booking_id"],
             data["room_id"],
             data["staff_id"],
             data["patient_id"],
             data["start_time"],
-            data["end_time"]
+            data["end_time"],
         )
 
 
@@ -84,10 +81,19 @@ class Booking:
 # CHECK ROOM AVAILABILITY
 # -----------------------------
 def is_room_available(room_id, start_time, end_time):
-    """ Checks if a room is available during a specific time period """
+    """Checks if a room is available during a specific time period"""
     for booking in bookings.values():
-        if booking.room_id == room_id:
-            if (start_time < booking.end_time and end_time > booking.start_time):
+        if booking["room_id"] == room_id:
+            # Convert string start_time and end_time from bookings to datetime
+            booking_start_time = datetime.datetime.strptime(
+                booking["start_time"], "%Y-%m-%d %H:%M"
+            )
+            booking_end_time = datetime.datetime.strptime(
+                booking["end_time"], "%Y-%m-%d %H:%M"
+            )
+
+            # Check if the booking times overlap
+            if start_time < booking_end_time and end_time > booking_start_time:
                 return False  # Conflict found
     return True
 
@@ -96,10 +102,12 @@ def is_room_available(room_id, start_time, end_time):
 # BOOK ROOM
 # -----------------------------
 def book_room(staff_id, patient_id, room_id, start_time, end_time):
-    """ Books a room for a patient if available """
+    """Books a room for a patient if available"""
     if is_room_available(room_id, start_time, end_time):
         booking_id = assign_booking_id()
-        new_booking = Booking(booking_id, room_id, staff_id, patient_id, start_time, end_time)
+        new_booking = Booking(
+            booking_id, room_id, staff_id, patient_id, start_time, end_time
+        )
         bookings[booking_id] = new_booking.to_dict()
         save_bookings()
         print(f"Room {room_id} booked successfully! Booking ID: {booking_id}")
@@ -111,11 +119,13 @@ def book_room(staff_id, patient_id, room_id, start_time, end_time):
 # LIST AVAILABLE ROOMS
 # -----------------------------
 def list_available_rooms(start_time, end_time):
-    """ Lists rooms available for booking during a time window """
+    """Lists rooms available for booking during a time window"""
     available_rooms = []
     for room in rooms.values():
-        if is_room_available(room.room_id, start_time, end_time):
-            available_rooms.append(room)
+        if is_room_available(room["room_id"], start_time, end_time):
+            available_rooms.append(
+                room["room_label"]
+            )  # Return the room label for easier display
     return available_rooms
 
 
@@ -123,10 +133,10 @@ def list_available_rooms(start_time, end_time):
 # VIEW BOOKINGS
 # -----------------------------
 def view_bookings_by_room(room_id):
-    """ View all bookings for a specific room """
+    """View all bookings for a specific room"""
     room_bookings = []
     for booking in bookings.values():
-        if booking.room_id == room_id:
+        if booking["room_id"] == room_id:
             room_bookings.append(booking)
     return room_bookings
 
@@ -135,7 +145,7 @@ def view_bookings_by_room(room_id):
 # CANCEL BOOKING
 # -----------------------------
 def cancel_booking(booking_id):
-    """ Cancel a booking by booking_id """
+    """Cancel a booking by booking_id"""
     if booking_id in bookings:
         del bookings[booking_id]
         save_bookings()
@@ -159,10 +169,23 @@ def room_booking_menu():
         choice = input("Enter choice: ")
 
         if choice == "1":
-            start_time = input("Enter start time (YYYY-MM-DD HH:MM): ")
-            end_time = input("Enter end time (YYYY-MM-DD HH:MM): ")
-            start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M")
-            end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+            # Same day check and date format input
+            while True:
+                start_time = input("Enter start time (YYYY-MM-DD HH:MM): ")
+                end_time = input("Enter end time (YYYY-MM-DD HH:MM): ")
+                try:
+                    start_time = datetime.datetime.strptime(
+                        start_time, "%Y-%m-%d %H:%M"
+                    )
+                    end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+                    # Ensure both times are on the same day
+                    if start_time.date() != end_time.date():
+                        print("Error: You can only book rooms on the same day.")
+                        continue  # Re-enter start and end time
+                    break
+                except ValueError:
+                    print("Invalid format. Please use YYYY-MM-DD HH:MM")
+
             available_rooms = list_available_rooms(start_time, end_time)
             print(f"Available rooms: {available_rooms}")
 
@@ -170,10 +193,24 @@ def room_booking_menu():
             room_id = input("Enter room ID: ")
             staff_id = input("Enter staff ID: ")
             patient_id = input("Enter patient ID: ")
-            start_time = input("Enter start time (YYYY-MM-DD HH:MM): ")
-            end_time = input("Enter end time (YYYY-MM-DD HH:MM): ")
-            start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M")
-            end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+
+            # Ensure that the user only selects a time interval on the same day
+            while True:
+                start_time = input("Enter start time (YYYY-MM-DD HH:MM): ")
+                end_time = input("Enter end time (YYYY-MM-DD HH:MM): ")
+                try:
+                    start_time = datetime.datetime.strptime(
+                        start_time, "%Y-%m-%d %H:%M"
+                    )
+                    end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+                    # Check that both times are on the same day
+                    if start_time.date() != end_time.date():
+                        print("Error: You can only book rooms on the same day.")
+                        continue  # Re-enter start and end time
+                    break
+                except ValueError:
+                    print("Invalid format. Please use YYYY-MM-DD HH:MM")
+
             book_room(staff_id, patient_id, room_id, start_time, end_time)
 
         elif choice == "3":

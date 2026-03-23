@@ -91,12 +91,11 @@ def update_patient():
 
     patient = patients[patient_id]
 
-    patient["first_name"] = input("Enter new first name: ")
-    patient["last_name"] = input("Enter new last name: ")
-    patient["email"] = input("Enter new email: ")
-    patient["phone"] = input("Enter new phone: ")
-    patient["condition"] = input("Enter new condition: ")
-    patient["medication"] = input("Enter new medication: ")
+    information=["first_name","last_name","email","phone","condition"]
+    for info in information:
+        new_info= input("Enter new "+info+" : ")
+        if new_info != "":
+            patient[info]=new_info
 
     patient["updated_at"] = str(datetime.datetime.now())
     save_data("data/patients.json", patients)
