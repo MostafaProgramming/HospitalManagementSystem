@@ -1044,8 +1044,42 @@ class RoomsTab(BaseTab):
         container = ttk.Frame(self, style="App.TFrame")
         container.pack(fill="both", expand=True)
 
-        left = ttk.Frame(container, style="App.TFrame")
-        left.pack(side="left", fill="y", padx=(0, 10))
+        left_shell = ttk.Frame(container, style="App.TFrame")
+        left_shell.pack(side="left", fill="y", padx=(0, 10))
+
+        self.left_canvas = tk.Canvas(
+            left_shell,
+            bg=PAGE_BG,
+            highlightthickness=0,
+            width=360,
+        )
+        left_scrollbar = ttk.Scrollbar(
+            left_shell,
+            orient="vertical",
+            command=self.left_canvas.yview,
+        )
+        self.left_canvas.configure(yscrollcommand=left_scrollbar.set)
+
+        self.left_form_container = ttk.Frame(self.left_canvas, style="App.TFrame")
+        self.left_canvas_window = self.left_canvas.create_window(
+            (0, 0),
+            window=self.left_form_container,
+            anchor="nw",
+        )
+
+        self.left_form_container.bind(
+            "<Configure>",
+            self._update_left_scroll_region,
+        )
+        self.left_canvas.bind(
+            "<Configure>",
+            self._resize_left_scroll_window,
+        )
+
+        self.left_canvas.pack(side="left", fill="y")
+        left_scrollbar.pack(side="right", fill="y")
+
+        left = self.left_form_container
 
         room_frame = ttk.LabelFrame(
             left,
@@ -1255,6 +1289,12 @@ class RoomsTab(BaseTab):
         ):
             self.bookings_tree.heading(column, text=heading)
             self.bookings_tree.column(column, width=width, anchor="center")
+
+    def _update_left_scroll_region(self, _event):
+        self.left_canvas.configure(scrollregion=self.left_canvas.bbox("all"))
+
+    def _resize_left_scroll_window(self, event):
+        self.left_canvas.itemconfigure(self.left_canvas_window, width=event.width)
 
     def add_room(self):
         try:
