@@ -3,6 +3,11 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+try:
+    import winsound
+except ImportError:
+    winsound = None
+
 from auth import auth_system
 from modules import (
     ehr,
@@ -260,9 +265,12 @@ class MainFrame(ttk.Frame):
         self.master = master
         self.user = user
         self.tabs = []
+        self.reminder_popup_windows = {}
+        self.reminder_check_job = None
 
         self._build_header()
         self._build_notebook()
+        self._schedule_reminder_check()
 
     def _build_header(self):
         header = ttk.Frame(self, style="App.TFrame")
@@ -352,6 +360,15 @@ class MainFrame(ttk.Frame):
             tab.refresh()
 
     def logout(self):
+        if self.reminder_check_job:
+            self.after_cancel(self.reminder_check_job)
+            self.reminder_check_job = None
+
+        for popup in list(self.reminder_popup_windows.values()):
+            if popup.winfo_exists():
+                popup.destroy()
+        self.reminder_popup_windows.clear()
+
         auth_system.logout_user()
         self.master.show_login()
 
@@ -372,6 +389,107 @@ class MainFrame(ttk.Frame):
             f'{user["userID"]} - {user["username"]} ({user["role"]})'
             for user in auth_system.list_users()
         ]
+
+    def _schedule_reminder_check(self):
+        self._check_due_reminders()
+        self.reminder_check_job = self.after(15000, self._schedule_reminder_check)
+
+    def _check_due_reminders(self):
+        for reminder in medication_reminders.list_reminders(due_only=True):
+            reminder_id = reminder["reminder_id"]
+
+            if reminder_id in self.reminder_popup_windows:
+                popup = self.reminder_popup_windows[reminder_id]
+                if popup.winfo_exists():
+                    continue
+                self.reminder_popup_windows.pop(reminder_id, None)
+
+            self._show_reminder_popup(reminder)
+
+    def _show_reminder_popup(self, reminder):
+        reminder_id = reminder["reminder_id"]
+        popup = tk.Toplevel(self)
+        popup.title("Medication Reminder")
+        popup.configure(bg=PANEL_BG)
+        popup.resizable(False, False)
+        popup.transient(self.winfo_toplevel())
+        popup.grab_set()
+
+        self.reminder_popup_windows[reminder_id] = popup
+        self._play_reminder_alarm()
+
+        try:
+            patient = ehr.get_patient(reminder["patient_id"])
+            patient_name = f'{patient["first_name"]} {patient["last_name"]}'.strip()
+        except ValueError:
+            patient_name = reminder["patient_id"]
+
+        body = (
+            f'Medication: {reminder["medication_name"]}\n'
+            f'Patient: {patient_name}\n'
+            f'Dosage: {reminder["dosage"]}\n'
+            f'Frequency: every {reminder["frequency_minutes"]} minutes\n'
+            f'Due: {reminder["next_due"]}'
+        )
+
+        ttk.Frame(popup, style="Panel.TFrame", padding=16).pack(fill="both", expand=True)
+        container = popup.winfo_children()[0]
+        ttk.Label(container, text="Reminder Due", style="Header.TLabel").pack(anchor="w")
+        ttk.Label(
+            container,
+            text=body,
+            style="Panel.TLabel",
+            justify="left",
+        ).pack(anchor="w", pady=(10, 14))
+
+        button_row = ttk.Frame(container, style="Panel.TFrame")
+        button_row.pack(fill="x")
+
+        def close_popup():
+            popup.grab_release()
+            popup.destroy()
+            self.reminder_popup_windows.pop(reminder_id, None)
+
+        def administer_now():
+            try:
+                medication_reminders.administer_reminder(reminder_id)
+            except ValueError as exc:
+                messagebox.showerror("Reminder not administered", str(exc), parent=popup)
+                return
+
+            close_popup()
+            self.refresh_all()
+
+        def administer_later():
+            try:
+                medication_reminders.snooze_reminder(reminder_id, 5)
+            except ValueError as exc:
+                messagebox.showerror("Reminder not snoozed", str(exc), parent=popup)
+                return
+
+            close_popup()
+            self.refresh_all()
+
+        popup.protocol("WM_DELETE_WINDOW", administer_later)
+
+        ttk.Button(
+            button_row,
+            text="Administer Now",
+            style="App.TButton",
+            command=administer_now,
+        ).pack(side="left", fill="x", expand=True)
+        ttk.Button(
+            button_row,
+            text="Later (5 mins)",
+            style="Accent.TButton",
+            command=administer_later,
+        ).pack(side="left", fill="x", expand=True, padx=(10, 0))
+
+    def _play_reminder_alarm(self):
+        if winsound is not None:
+            winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+        else:
+            self.bell()
 
 
 class BaseTab(ttk.Frame):
@@ -2060,9 +2178,9 @@ class RemindersTab(BaseTab):
         self.patient_var = tk.StringVar()
         self.medication_var = tk.StringVar()
         self.dosage_var = tk.StringVar(value="1")
-        self.frequency_var = tk.StringVar(value="8")
+        self.frequency_var = tk.StringVar(value="60")
         self.next_due_var = tk.StringVar(
-            value=(datetime.datetime.now() + datetime.timedelta(hours=1)).strftime(
+            value=(datetime.datetime.now() + datetime.timedelta(minutes=60)).strftime(
                 "%Y-%m-%d %H:%M"
             )
         )
@@ -2104,7 +2222,7 @@ class RemindersTab(BaseTab):
 
         for row, label, variable in (
             (3, "Dosage", self.dosage_var),
-            (4, "Frequency (hrs)", self.frequency_var),
+            (4, "Frequency (mins)", self.frequency_var),
             (5, "Next Due", self.next_due_var),
             (6, "Notes", self.notes_var),
         ):
@@ -2129,22 +2247,28 @@ class RemindersTab(BaseTab):
         ).grid(row=7, column=0, columnspan=2, sticky="ew")
         ttk.Button(
             form,
-            text="Mark Completed",
+            text="Administer Now",
             style="Accent.TButton",
-            command=self.mark_completed,
+            command=self.administer_selected_reminder,
         ).grid(row=8, column=0, columnspan=2, sticky="ew", pady=(8, 0))
         ttk.Button(
             form,
-            text="Toggle Active",
+            text="Later (5 mins)",
             style="App.TButton",
-            command=self.toggle_reminder,
+            command=self.snooze_selected_reminder,
         ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(8, 0))
         ttk.Button(
             form,
-            text="Delete Selected",
+            text="Toggle Active",
             style="Accent.TButton",
-            command=self.delete_reminder,
+            command=self.toggle_reminder,
         ).grid(row=10, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        ttk.Button(
+            form,
+            text="Delete Selected",
+            style="App.TButton",
+            command=self.delete_reminder,
+        ).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(8, 0))
         form.columnconfigure(1, weight=1)
 
         table = ttk.LabelFrame(
@@ -2172,7 +2296,7 @@ class RemindersTab(BaseTab):
             ("patient", "Patient", 90),
             ("medication", "Medication", 150),
             ("dosage", "Dosage", 80),
-            ("frequency", "Every (hrs)", 100),
+            ("frequency", "Every (mins)", 110),
             ("next_due", "Next Due", 150),
             ("status", "Status", 100),
         ):
@@ -2199,16 +2323,30 @@ class RemindersTab(BaseTab):
         self.show_info("Reminder added", f'Created reminder {reminder["reminder_id"]}.')
         self.app_frame.refresh_all()
 
-    def mark_completed(self):
+    def administer_selected_reminder(self):
         reminder_id = self.reminder_id_var.get()
         if not reminder_id:
-            self.show_error("Mark reminder", "Select a reminder first.")
+            self.show_error("Administer reminder", "Select a reminder first.")
             return
 
         try:
-            medication_reminders.mark_reminder_completed(reminder_id)
+            medication_reminders.administer_reminder(reminder_id)
         except ValueError as exc:
-            self.show_error("Reminder not updated", exc)
+            self.show_error("Reminder not administered", exc)
+            return
+
+        self.app_frame.refresh_all()
+
+    def snooze_selected_reminder(self):
+        reminder_id = self.reminder_id_var.get()
+        if not reminder_id:
+            self.show_error("Snooze reminder", "Select a reminder first.")
+            return
+
+        try:
+            medication_reminders.snooze_reminder(reminder_id, 5)
+        except ValueError as exc:
+            self.show_error("Reminder not snoozed", exc)
             return
 
         self.app_frame.refresh_all()
@@ -2290,7 +2428,7 @@ class RemindersTab(BaseTab):
                     reminder["patient_id"],
                     reminder["medication_name"],
                     reminder["dosage"],
-                    reminder["frequency_hours"],
+                    reminder["frequency_minutes"],
                     reminder["next_due"],
                     status,
                 ),
