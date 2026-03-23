@@ -1590,7 +1590,7 @@ class AvailabilityTab(BaseTab):
         self.shift_date_var = tk.StringVar(value=datetime.date.today().strftime("%Y-%m-%d"))
         self.shift_start_var = tk.StringVar(value="09:00")
         self.shift_end_var = tk.StringVar(value="17:00")
-        self.status_var = tk.StringVar(value="Available")
+        self.status_var = tk.StringVar(value="Calculated automatically")
         self.notes_var = tk.StringVar()
         self.record_id_var = tk.StringVar()
 
@@ -1620,8 +1620,7 @@ class AvailabilityTab(BaseTab):
             (2, "Shift Date", self.shift_date_var),
             (3, "Shift Start", self.shift_start_var),
             (4, "Shift End", self.shift_end_var),
-            (5, "Status", self.status_var),
-            (6, "Notes", self.notes_var),
+            (5, "Notes", self.notes_var),
         ):
             ttk.Label(form, text=label, style="Panel.TLabel").grid(
                 row=row,
@@ -1629,30 +1628,40 @@ class AvailabilityTab(BaseTab):
                 sticky="w",
                 pady=(0, 6),
             )
-            if label == "Status":
-                widget = ttk.Combobox(
-                    form,
-                    textvariable=variable,
-                    width=26,
-                    state="readonly",
-                    values=("Available", "On Call", "Leave"),
-                )
-            else:
-                widget = ttk.Entry(form, textvariable=variable, width=28)
+            widget = ttk.Entry(form, textvariable=variable, width=28)
             widget.grid(row=row, column=1, sticky="ew", pady=(0, 8))
+
+        ttk.Label(form, text="Current Status", style="Panel.TLabel").grid(
+            row=6,
+            column=0,
+            sticky="w",
+            pady=(0, 6),
+        )
+        ttk.Entry(
+            form,
+            textvariable=self.status_var,
+            width=28,
+            state="readonly",
+        ).grid(row=6, column=1, sticky="ew", pady=(0, 4))
+        ttk.Label(
+            form,
+            text="Derived from shift times and active room bookings.",
+            style="SubHeader.TLabel",
+            wraplength=260,
+        ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(0, 8))
 
         ttk.Button(
             form,
             text="Add Availability",
             style="App.TButton",
             command=self.add_availability,
-        ).grid(row=7, column=0, columnspan=2, sticky="ew")
+        ).grid(row=8, column=0, columnspan=2, sticky="ew")
         ttk.Button(
             form,
             text="Delete Selected",
             style="Accent.TButton",
             command=self.delete_availability,
-        ).grid(row=8, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(8, 0))
         form.columnconfigure(1, weight=1)
 
         table = ttk.LabelFrame(
@@ -1687,7 +1696,6 @@ class AvailabilityTab(BaseTab):
                 self.shift_date_var.get(),
                 self.shift_start_var.get(),
                 self.shift_end_var.get(),
-                self.status_var.get(),
                 self.notes_var.get(),
             )
         except ValueError as exc:
@@ -1728,6 +1736,7 @@ class AvailabilityTab(BaseTab):
     def refresh(self):
         self.staff_choice.configure(values=self.app_frame.staff_options())
         self.tree.delete(*self.tree.get_children())
+        self.status_var.set("Calculated automatically")
         for record in staff_availability.list_availability():
             display_staff = (
                 f'{record["staff_id"]} - {record["staff_name"]} ({record["role"]})'

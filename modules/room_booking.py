@@ -1,5 +1,6 @@
 import datetime
 
+from modules.staff_availability import validate_staff_booking
 from utils.id_generator import assign_booking_id, assign_room_id
 from utils.json_storage import load_data, save_data
 
@@ -188,6 +189,8 @@ def create_booking(room_id, staff_id, patient_id, start_time, end_time, purpose=
 
     start_dt = _parse_datetime(start_time)
     end_dt = _parse_datetime(end_time)
+
+    validate_staff_booking(staff_id, start_dt, end_dt)
 
     if not is_room_available(room_id, start_dt, end_dt):
         raise ValueError("Room is not available during the selected time.")
