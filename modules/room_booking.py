@@ -29,9 +29,46 @@ def _parse_datetime(value):
     return datetime.datetime.strptime(value.strip(), DATETIME_FORMAT)
 
 
-def list_rooms():
+def get_room_status(room_id, at_time=None, rooms=None, bookings=None):
+    if at_time is None:
+        at_time = datetime.datetime.now()
+
+    if rooms is None:
+        rooms = _load_rooms()
+
+    if bookings is None:
+        bookings = _load_bookings()
+
+    for booking in bookings.values():
+        if booking["room_id"] != room_id:
+            continue
+
+        booking_start = _parse_datetime(booking["start_time"])
+        booking_end = _parse_datetime(booking["end_time"])
+
+        if booking_start <= at_time < booking_end:
+            return "Unavailable"
+
+    room = rooms.get(room_id, {})
+    return room.get("status", "Available")
+
+
+def list_rooms(reference_time=None):
     rooms = _load_rooms()
-    return sorted(rooms.values(), key=lambda room: room["room_id"])
+    bookings = _load_bookings()
+    room_items = []
+
+    for room in rooms.values():
+        room_copy = dict(room)
+        room_copy["status"] = get_room_status(
+            room["room_id"],
+            at_time=reference_time,
+            rooms=rooms,
+            bookings=bookings,
+        )
+        room_items.append(room_copy)
+
+    return sorted(room_items, key=lambda room: room["room_id"])
 
 
 def add_room(room_label, room_type, capacity, notes="", status="Available"):
