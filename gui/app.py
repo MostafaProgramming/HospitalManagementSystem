@@ -1152,6 +1152,13 @@ class RoomsTab(BaseTab):
             )
         )
         self.purpose_var = tk.StringVar(value="Consultation")
+        self.detail_booking_id_var = tk.StringVar(value="Select a booking")
+        self.detail_room_var = tk.StringVar(value="-")
+        self.detail_staff_var = tk.StringVar(value="-")
+        self.detail_patient_var = tk.StringVar(value="-")
+        self.detail_time_var = tk.StringVar(value="-")
+        self.detail_purpose_var = tk.StringVar(value="-")
+        self.detail_status_var = tk.StringVar(value="-")
 
         ttk.Label(booking_frame, text="Room", style="Panel.TLabel").grid(
             row=0,
@@ -1240,8 +1247,42 @@ class RoomsTab(BaseTab):
             command=self.cancel_booking,
         ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(8, 0))
 
+        details_frame = ttk.LabelFrame(
+            left,
+            text="Booking Details",
+            style="Section.TLabelframe",
+            padding=14,
+        )
+        details_frame.pack(fill="x", pady=(12, 0))
+
+        detail_fields = (
+            ("Booking", self.detail_booking_id_var),
+            ("Room", self.detail_room_var),
+            ("Staff", self.detail_staff_var),
+            ("Patient", self.detail_patient_var),
+            ("Time", self.detail_time_var),
+            ("Purpose", self.detail_purpose_var),
+            ("Status", self.detail_status_var),
+        )
+
+        for row, (label, variable) in enumerate(detail_fields):
+            ttk.Label(details_frame, text=label, style="Panel.TLabel").grid(
+                row=row,
+                column=0,
+                sticky="nw",
+                pady=(0, 6),
+            )
+            ttk.Label(
+                details_frame,
+                textvariable=variable,
+                style="Panel.TLabel",
+                wraplength=250,
+                justify="left",
+            ).grid(row=row, column=1, sticky="w", pady=(0, 6))
+
         room_frame.columnconfigure(1, weight=1)
         booking_frame.columnconfigure(1, weight=1)
+        details_frame.columnconfigure(1, weight=1)
 
         right = ttk.Frame(container, style="App.TFrame")
         right.pack(side="left", fill="both", expand=True)
@@ -1289,6 +1330,7 @@ class RoomsTab(BaseTab):
         ):
             self.bookings_tree.heading(column, text=heading)
             self.bookings_tree.column(column, width=width, anchor="center")
+        self.bookings_tree.bind("<<TreeviewSelect>>", self.on_booking_select)
 
     def _update_left_scroll_region(self, _event):
         self.left_canvas.configure(scrollregion=self.left_canvas.bbox("all"))
@@ -1360,6 +1402,7 @@ class RoomsTab(BaseTab):
 
         self.show_info("Booking created", f'Created booking {booking["booking_id"]}.')
         self.app_frame.refresh_all()
+        self._set_booking_details(booking["booking_id"])
 
     def cancel_booking(self):
         selected = self.bookings_tree.selection()
@@ -1375,6 +1418,7 @@ class RoomsTab(BaseTab):
             return
 
         self.app_frame.refresh_all()
+        self._clear_booking_details()
 
     def on_room_select(self, _event):
         selected = self.rooms_tree.selection()
@@ -1390,6 +1434,96 @@ class RoomsTab(BaseTab):
         self.room_type_var.set(room_type)
         self.capacity_var.set(capacity)
         self.booking_room_var.set(f"{room_id} - {label}")
+
+    def on_booking_select(self, _event):
+        selected = self.bookings_tree.selection()
+        if not selected:
+            self._clear_booking_details()
+            return
+
+        booking_id = self.bookings_tree.item(selected[0], "values")[0]
+        self._set_booking_details(booking_id)
+
+    def _booking_lookup_maps(self):
+        rooms = {
+            room["room_id"]: room
+            for room in room_booking.list_rooms()
+        }
+        staff = {
+            user["userID"]: user
+            for user in auth_system.list_users()
+        }
+        patients = {
+            patient["patient_id"]: patient
+            for patient in ehr.list_patients()
+        }
+        return rooms, staff, patients
+
+    def _set_booking_details(self, booking_id):
+        booking = next(
+            (
+                booking_item
+                for booking_item in room_booking.list_bookings()
+                if booking_item["booking_id"] == booking_id
+            ),
+            None,
+        )
+
+        if booking is None:
+            self._clear_booking_details()
+            return
+
+        rooms, staff, patients = self._booking_lookup_maps()
+        room = rooms.get(booking["room_id"], {})
+        staff_member = staff.get(booking["staff_id"], {})
+        patient = patients.get(booking["patient_id"], {})
+
+        room_name = room.get("room_label", booking["room_id"])
+        staff_name = staff_member.get("username", booking["staff_id"])
+        patient_name = " ".join(
+            part
+            for part in (
+                patient.get("first_name", "").strip(),
+                patient.get("last_name", "").strip(),
+            )
+            if part
+        ) or booking["patient_id"]
+
+        start_time = datetime.datetime.strptime(
+            booking["start_time"],
+            "%Y-%m-%d %H:%M",
+        )
+        end_time = datetime.datetime.strptime(
+            booking["end_time"],
+            "%Y-%m-%d %H:%M",
+        )
+        now = datetime.datetime.now()
+
+        if now < start_time:
+            booking_status = "Upcoming"
+        elif start_time <= now < end_time:
+            booking_status = "In progress"
+        else:
+            booking_status = "Completed"
+
+        self.detail_booking_id_var.set(booking["booking_id"])
+        self.detail_room_var.set(f'{booking["room_id"]} - {room_name}')
+        self.detail_staff_var.set(
+            f'{booking["staff_id"]} - {staff_name} ({staff_member.get("role", "Staff")})'
+        )
+        self.detail_patient_var.set(f'{booking["patient_id"]} - {patient_name}')
+        self.detail_time_var.set(f'{booking["start_time"]} to {booking["end_time"]}')
+        self.detail_purpose_var.set(booking.get("purpose", "Consultation"))
+        self.detail_status_var.set(booking_status)
+
+    def _clear_booking_details(self):
+        self.detail_booking_id_var.set("Select a booking")
+        self.detail_room_var.set("-")
+        self.detail_staff_var.set("-")
+        self.detail_patient_var.set("-")
+        self.detail_time_var.set("-")
+        self.detail_purpose_var.set("-")
+        self.detail_status_var.set("-")
 
     def refresh(self):
         room_options = [
@@ -1428,6 +1562,13 @@ class RoomsTab(BaseTab):
                     booking["end_time"],
                 ),
             )
+
+        selected = self.bookings_tree.selection()
+        if selected:
+            booking_id = self.bookings_tree.item(selected[0], "values")[0]
+            self._set_booking_details(booking_id)
+        else:
+            self._clear_booking_details()
 
 
 class AvailabilityTab(BaseTab):
