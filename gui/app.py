@@ -512,6 +512,10 @@ class BaseTab(ttk.Frame):
             return ""
         return combined_value.split(" - ", 1)[0].strip()
 
+    @staticmethod
+    def _validate_numeric_input(proposed_value):
+        return proposed_value.isdigit() or proposed_value == ""
+
     def _make_tree(self, parent, columns):
         tree = ttk.Treeview(parent, columns=columns, show="headings")
         scrollbar = ttk.Scrollbar(parent, orient="vertical", command=tree.yview)
@@ -1160,10 +1164,6 @@ class MedicationTab(BaseTab):
             self.medication_canvas_window,
             width=event.width,
         )
-
-    @staticmethod
-    def _validate_numeric_input(proposed_value):
-        return proposed_value.isdigit() or proposed_value == ""
 
     def add_medication(self):
         try:
