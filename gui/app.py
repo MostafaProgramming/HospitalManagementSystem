@@ -535,7 +535,7 @@ class DashboardTab(BaseTab):
             ("low_stock", "Low Stock"),
             ("bookings", "Upcoming Bookings"),
             ("staff", "Scheduled Staff"),
-            ("due", "Due Reminders"),
+            ("reminders", "Registered Reminders"),
         ):
             card = tk.Frame(
                 cards,
@@ -604,7 +604,7 @@ class DashboardTab(BaseTab):
 
         reminders_frame = ttk.LabelFrame(
             lower,
-            text="Due Reminders",
+            text="Registered Reminders",
             style="Section.TLabelframe",
             padding=12,
         )
@@ -628,14 +628,18 @@ class DashboardTab(BaseTab):
         low_stock_items = medication_stock.list_medications(low_stock_only=True)
         upcoming_bookings = room_booking.list_bookings(upcoming_only=True)[:10]
         staff_items = staff_availability.list_availability()
-        due_reminders = medication_reminders.list_reminders(due_only=True)[:10]
+        active_reminders = [
+            reminder
+            for reminder in medication_reminders.list_reminders()
+            if reminder.get("active", True)
+        ][:10]
 
         self.cards["patients"].configure(text=str(len(patients)))
         self.cards["medications"].configure(text=str(len(medications)))
         self.cards["low_stock"].configure(text=str(len(low_stock_items)))
         self.cards["bookings"].configure(text=str(len(upcoming_bookings)))
         self.cards["staff"].configure(text=str(len(staff_items)))
-        self.cards["due"].configure(text=str(len(due_reminders)))
+        self.cards["reminders"].configure(text=str(len(active_reminders)))
 
         self._fill_tree(
             self.low_stock_tree,
@@ -665,7 +669,7 @@ class DashboardTab(BaseTab):
                     item["medication_name"],
                     item["next_due"],
                 )
-                for item in due_reminders
+                for item in active_reminders
             ],
         )
 
