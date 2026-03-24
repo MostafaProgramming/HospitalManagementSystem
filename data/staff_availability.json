@@ -1,1 +1,24 @@
-{}
+{
+    "A002": {
+        "availability_id": "A002",
+        "staff_id": "U001",
+        "staff_name": "hatem",
+        "role": "Nurse",
+        "shift_date": "2026-03-23",
+        "shift_start": "09:00",
+        "shift_end": "22:00",
+        "status": "Available",
+        "notes": ""
+    },
+    "A003": {
+        "availability_id": "A003",
+        "staff_id": "U001",
+        "staff_name": "hatem",
+        "role": "Nurse",
+        "shift_date": "2026-03-24",
+        "shift_start": "09:00",
+        "shift_end": "22:00",
+        "status": "Available",
+        "notes": ""
+    }
+}

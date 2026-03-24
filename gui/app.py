@@ -280,7 +280,7 @@ class MainFrame(ttk.Frame):
         title_block.pack(side="left", fill="x", expand=True)
         ttk.Label(
             title_block,
-            text="Hospital Operations Dashboard",
+            text="Hospital Management System",
             style="Header.TLabel",
         ).pack(anchor="w")
         ttk.Label(

@@ -1,1 +1,20 @@
-{}
+{
+    "B001": {
+        "booking_id": "B001",
+        "room_id": "R003",
+        "staff_id": "U001",
+        "patient_id": "P004",
+        "purpose": "Consultation",
+        "start_time": "2026-03-23 19:00",
+        "end_time": "2026-03-23 20:00"
+    },
+    "B002": {
+        "booking_id": "B002",
+        "room_id": "R002",
+        "staff_id": "U001",
+        "patient_id": "P005",
+        "purpose": "Consultation",
+        "start_time": "2026-03-24 21:00",
+        "end_time": "2026-03-24 22:00"
+    }
+}

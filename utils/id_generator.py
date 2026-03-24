@@ -35,9 +35,22 @@ def _assign_from_counter(prefix, counter_name, width=3):
 
 
 def assign_user_id(records=None):
-    generated = generate_prefixed_id("U", records)
-    if generated:
-        return generated
+    if records:
+        highest_value = 0
+        pattern = re.compile(r"^U(\d+)$")
+
+        for key, record in records.items():
+            candidates = [key]
+            if isinstance(record, dict):
+                candidates.append(record.get("userID", ""))
+
+            for candidate in candidates:
+                match = pattern.match(str(candidate))
+                if match:
+                    highest_value = max(highest_value, int(match.group(1)))
+
+        return f"U{highest_value + 1:03d}"
+
     return _assign_from_counter("U", "current_user_id")
 
 
