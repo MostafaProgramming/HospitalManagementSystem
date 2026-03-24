@@ -3,6 +3,9 @@ import datetime
 from utils.id_generator import assign_medication_id
 from utils.json_storage import load_data, save_data
 
+MIN_DOSAGE = 1
+MAX_DOSAGE = 10
+
 
 def _load_medications():
     return load_data("data/medications.json")
@@ -10,6 +13,13 @@ def _load_medications():
 
 def _save_medications(medications):
     save_data("data/medications.json", medications)
+
+
+def validate_dosage(dosage):
+    if dosage < MIN_DOSAGE or dosage > MAX_DOSAGE:
+        raise ValueError(
+            f"Dosage must be between {MIN_DOSAGE} and {MAX_DOSAGE}."
+        )
 
 
 def list_medications(low_stock_only=False):
@@ -143,8 +153,7 @@ def administer_medication(medication_id, patient_id, dosage):
     if patient_id not in patients:
         raise ValueError("Patient not found.")
 
-    if dosage <= 0:
-        raise ValueError("Dosage must be greater than 0.")
+    validate_dosage(dosage)
 
     medication = medications[medication_id]
 

@@ -1,6 +1,6 @@
 import datetime
 
-from modules.medication_stock import administer_medication
+from modules.medication_stock import administer_medication, validate_dosage
 from utils.id_generator import assign_reminder_id
 from utils.json_storage import load_data, save_data
 
@@ -75,8 +75,7 @@ def add_reminder(patient_id, medication_id, dosage, frequency_minutes, next_due,
     if medication_id not in medications:
         raise ValueError("Medication not found.")
 
-    if dosage <= 0:
-        raise ValueError("Dosage must be greater than 0.")
+    validate_dosage(dosage)
 
     if frequency_minutes <= 0:
         raise ValueError("Frequency must be greater than 0 minutes.")

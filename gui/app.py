@@ -1027,6 +1027,7 @@ class MedicationTab(BaseTab):
         self.patient_choice_var = tk.StringVar()
         self.dosage_var = tk.StringVar()
         self.resupply_var = tk.StringVar()
+        number_validate = (self.register(self._validate_numeric_input), "%P")
 
         fields = [
             ("Medication ID", self.medication_id_var, True),
@@ -1107,12 +1108,9 @@ class MedicationTab(BaseTab):
             sticky="w",
             pady=(0, 6),
         )
-        ttk.Entry(left, textvariable=self.dosage_var, width=28).grid(
-            row=13,
-            column=1,
-            sticky="ew",
-            pady=(0, 8),
-        )
+        dosage_entry = ttk.Entry(left, textvariable=self.dosage_var, width=28)
+        dosage_entry.configure(validate="key", validatecommand=number_validate)
+        dosage_entry.grid(row=13, column=1, sticky="ew", pady=(0, 8))
         ttk.Button(
             left,
             text="Administer",
@@ -1162,6 +1160,10 @@ class MedicationTab(BaseTab):
             self.medication_canvas_window,
             width=event.width,
         )
+
+    @staticmethod
+    def _validate_numeric_input(proposed_value):
+        return proposed_value.isdigit() or proposed_value == ""
 
     def add_medication(self):
         try:
@@ -2320,6 +2322,7 @@ class RemindersTab(BaseTab):
             )
         )
         self.notes_var = tk.StringVar()
+        number_validate = (self.register(self._validate_numeric_input), "%P")
 
         ttk.Label(form, text="Reminder ID", style="Panel.TLabel").grid(
             row=0,
@@ -2367,7 +2370,10 @@ class RemindersTab(BaseTab):
                 sticky="w",
                 pady=(0, 6),
             )
-            ttk.Entry(form, textvariable=variable, width=28).grid(
+            entry = ttk.Entry(form, textvariable=variable, width=28)
+            if label in {"Dosage", "Frequency (mins)"}:
+                entry.configure(validate="key", validatecommand=number_validate)
+            entry.grid(
                 row=row,
                 column=1,
                 sticky="ew",
