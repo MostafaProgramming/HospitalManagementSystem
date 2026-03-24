@@ -20,12 +20,45 @@ def _ensure_patient_exists(patients, patient_id):
         raise ValueError("Patient not found.")
 
 
-def _validate_patient_fields(first_name, last_name, dob):
+def _contains_digits(value):
+    return any(character.isdigit() for character in value)
+
+
+def _validate_patient_fields(first_name, last_name, email, phone, dob, condition, medication, notes):
     if not first_name.strip():
         raise ValueError("First name is required.")
 
     if not last_name.strip():
         raise ValueError("Last name is required.")
+
+    if _contains_digits(first_name):
+        raise ValueError("First name cannot contain numbers.")
+
+    if _contains_digits(last_name):
+        raise ValueError("Last name cannot contain numbers.")
+
+    email_value = email.strip().lower()
+    if not email_value:
+        raise ValueError("Email is required.")
+
+    if not email_value.endswith("@gmail.com") or email_value == "@gmail.com":
+        raise ValueError("Email must end with @gmail.com.")
+
+    phone_value = phone.strip()
+    if not phone_value:
+        raise ValueError("Phone number is required.")
+
+    if not phone_value.isdigit():
+        raise ValueError("Phone number must contain numbers only.")
+
+    if _contains_digits(condition):
+        raise ValueError("Condition cannot contain numbers.")
+
+    if _contains_digits(medication):
+        raise ValueError("Medication cannot contain numbers.")
+
+    if _contains_digits(notes):
+        raise ValueError("Notes cannot contain numbers.")
 
     try:
         datetime.datetime.strptime(dob.strip(), DATE_FORMAT)
@@ -58,7 +91,16 @@ def get_patient(patient_id):
 
 
 def add_patient(first_name, last_name, email, phone, dob, condition, medication, notes=""):
-    _validate_patient_fields(first_name, last_name, dob)
+    _validate_patient_fields(
+        first_name,
+        last_name,
+        email,
+        phone,
+        dob,
+        condition,
+        medication,
+        notes,
+    )
 
     patients = _load_patients()
     patient_id = assign_patient_id(patients)
@@ -84,7 +126,16 @@ def add_patient(first_name, last_name, email, phone, dob, condition, medication,
 
 
 def update_patient(patient_id, first_name, last_name, email, phone, dob, condition, medication, notes=""):
-    _validate_patient_fields(first_name, last_name, dob)
+    _validate_patient_fields(
+        first_name,
+        last_name,
+        email,
+        phone,
+        dob,
+        condition,
+        medication,
+        notes,
+    )
 
     patients = _load_patients()
     _ensure_patient_exists(patients, patient_id)

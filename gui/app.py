@@ -699,13 +699,41 @@ class PatientsTab(BaseTab):
         body = ttk.Frame(self, style="App.TFrame")
         body.pack(fill="both", expand=True)
 
+        left_shell = ttk.Frame(body, style="App.TFrame")
+        left_shell.pack(side="left", fill="y", padx=(0, 10))
+
+        self.form_canvas = tk.Canvas(
+            left_shell,
+            bg=PAGE_BG,
+            highlightthickness=0,
+            width=450,
+        )
+        form_scrollbar = ttk.Scrollbar(
+            left_shell,
+            orient="vertical",
+            command=self.form_canvas.yview,
+        )
+        self.form_canvas.configure(yscrollcommand=form_scrollbar.set)
+
+        self.form_container = ttk.Frame(self.form_canvas, style="App.TFrame")
+        self.form_canvas_window = self.form_canvas.create_window(
+            (0, 0),
+            window=self.form_container,
+            anchor="nw",
+        )
+        self.form_container.bind("<Configure>", self._update_form_scroll_region)
+        self.form_canvas.bind("<Configure>", self._resize_form_scroll_window)
+
+        self.form_canvas.pack(side="left", fill="y")
+        form_scrollbar.pack(side="right", fill="y")
+
         form = ttk.LabelFrame(
-            body,
+            self.form_container,
             text="Patient Details",
             style="Section.TLabelframe",
             padding=14,
         )
-        form.pack(side="left", fill="y", padx=(0, 10))
+        form.pack(fill="x")
 
         self.patient_id_var = tk.StringVar()
         self.first_name_var = tk.StringVar()
@@ -734,6 +762,9 @@ class PatientsTab(BaseTab):
             ("Current Medication", self.medication_var, False),
         ]
 
+        phone_validate = (self.register(self._validate_phone_input), "%P")
+        letters_validate = (self.register(self._validate_letters_input), "%P")
+
         for row, (label, variable, readonly) in enumerate(fields):
             ttk.Label(form, text=label, style="Panel.TLabel").grid(
                 row=row,
@@ -742,6 +773,10 @@ class PatientsTab(BaseTab):
                 pady=(0, 6),
             )
             entry = ttk.Entry(form, textvariable=variable, width=30)
+            if label == "Phone":
+                entry.configure(validate="key", validatecommand=phone_validate)
+            elif label in {"First Name", "Last Name", "Condition", "Current Medication"}:
+                entry.configure(validate="key", validatecommand=letters_validate)
             if readonly:
                 entry.configure(state="readonly")
             entry.grid(row=row, column=1, sticky="ew", pady=(0, 8))
@@ -753,6 +788,7 @@ class PatientsTab(BaseTab):
             pady=(0, 6),
         )
         self.notes_text.grid(row=len(fields), column=1, sticky="ew", pady=(0, 10))
+        self.notes_text.bind("<KeyPress>", self._block_digit_keypress)
 
         buttons = ttk.Frame(form, style="Panel.TFrame")
         buttons.grid(row=len(fields) + 1, column=0, columnspan=2, sticky="ew")
@@ -805,6 +841,26 @@ class PatientsTab(BaseTab):
 
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
         form.columnconfigure(1, weight=1)
+
+    def _update_form_scroll_region(self, _event):
+        self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
+
+    def _resize_form_scroll_window(self, event):
+        self.form_canvas.itemconfigure(self.form_canvas_window, width=event.width)
+
+    @staticmethod
+    def _validate_phone_input(proposed_value):
+        return proposed_value.isdigit() or proposed_value == ""
+
+    @staticmethod
+    def _validate_letters_input(proposed_value):
+        return not any(character.isdigit() for character in proposed_value)
+
+    @staticmethod
+    def _block_digit_keypress(event):
+        if event.char and event.char.isdigit():
+            return "break"
+        return None
 
     def _payload(self):
         return {
