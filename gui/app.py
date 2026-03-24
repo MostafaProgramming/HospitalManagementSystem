@@ -972,13 +972,50 @@ class MedicationTab(BaseTab):
         body = ttk.Frame(self, style="App.TFrame")
         body.pack(fill="both", expand=True)
 
+        left_shell = ttk.Frame(body, style="App.TFrame")
+        left_shell.pack(side="left", fill="y", padx=(0, 10))
+
+        self.medication_canvas = tk.Canvas(
+            left_shell,
+            bg=PAGE_BG,
+            highlightthickness=0,
+            width=420,
+        )
+        medication_scrollbar = ttk.Scrollbar(
+            left_shell,
+            orient="vertical",
+            command=self.medication_canvas.yview,
+        )
+        self.medication_canvas.configure(yscrollcommand=medication_scrollbar.set)
+
+        self.medication_form_container = ttk.Frame(
+            self.medication_canvas,
+            style="App.TFrame",
+        )
+        self.medication_canvas_window = self.medication_canvas.create_window(
+            (0, 0),
+            window=self.medication_form_container,
+            anchor="nw",
+        )
+        self.medication_form_container.bind(
+            "<Configure>",
+            self._update_medication_scroll_region,
+        )
+        self.medication_canvas.bind(
+            "<Configure>",
+            self._resize_medication_scroll_window,
+        )
+
+        self.medication_canvas.pack(side="left", fill="y")
+        medication_scrollbar.pack(side="right", fill="y")
+
         left = ttk.LabelFrame(
-            body,
+            self.medication_form_container,
             text="Inventory Actions",
             style="Section.TLabelframe",
             padding=14,
         )
-        left.pack(side="left", fill="y", padx=(0, 10))
+        left.pack(fill="x")
 
         self.medication_id_var = tk.StringVar()
         self.name_var = tk.StringVar()
@@ -1019,22 +1056,28 @@ class MedicationTab(BaseTab):
             style="App.TButton",
             command=self.add_medication,
         ).grid(row=7, column=0, columnspan=2, sticky="ew", pady=(6, 6))
+        ttk.Button(
+            left,
+            text="Delete Medication",
+            style="Accent.TButton",
+            command=self.delete_medication,
+        ).grid(row=8, column=0, columnspan=2, sticky="ew")
 
         ttk.Separator(left, orient="horizontal").grid(
-            row=8,
+            row=9,
             column=0,
             columnspan=2,
             sticky="ew",
             pady=8,
         )
         ttk.Label(left, text="Resupply Amount", style="Panel.TLabel").grid(
-            row=9,
+            row=10,
             column=0,
             sticky="w",
             pady=(0, 6),
         )
         ttk.Entry(left, textvariable=self.resupply_var, width=28).grid(
-            row=9,
+            row=10,
             column=1,
             sticky="ew",
             pady=(0, 8),
@@ -1044,10 +1087,10 @@ class MedicationTab(BaseTab):
             text="Resupply",
             style="Accent.TButton",
             command=self.resupply_medication,
-        ).grid(row=10, column=0, columnspan=2, sticky="ew", pady=(0, 8))
+        ).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(0, 8))
 
         ttk.Label(left, text="Patient", style="Panel.TLabel").grid(
-            row=11,
+            row=12,
             column=0,
             sticky="w",
             pady=(0, 6),
@@ -1057,15 +1100,15 @@ class MedicationTab(BaseTab):
             textvariable=self.patient_choice_var,
             width=26,
         )
-        self.patient_choice.grid(row=11, column=1, sticky="ew", pady=(0, 8))
+        self.patient_choice.grid(row=12, column=1, sticky="ew", pady=(0, 8))
         ttk.Label(left, text="Dosage", style="Panel.TLabel").grid(
-            row=12,
+            row=13,
             column=0,
             sticky="w",
             pady=(0, 6),
         )
         ttk.Entry(left, textvariable=self.dosage_var, width=28).grid(
-            row=12,
+            row=13,
             column=1,
             sticky="ew",
             pady=(0, 8),
@@ -1075,13 +1118,13 @@ class MedicationTab(BaseTab):
             text="Administer",
             style="App.TButton",
             command=self.administer_medication,
-        ).grid(row=13, column=0, columnspan=2, sticky="ew")
+        ).grid(row=14, column=0, columnspan=2, sticky="ew")
         ttk.Button(
             left,
             text="Clear Form",
             style="Accent.TButton",
             command=self.clear_form,
-        ).grid(row=14, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        ).grid(row=15, column=0, columnspan=2, sticky="ew", pady=(10, 0))
 
         right = ttk.LabelFrame(
             body,
@@ -1109,6 +1152,17 @@ class MedicationTab(BaseTab):
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
         left.columnconfigure(1, weight=1)
 
+    def _update_medication_scroll_region(self, _event):
+        self.medication_canvas.configure(
+            scrollregion=self.medication_canvas.bbox("all")
+        )
+
+    def _resize_medication_scroll_window(self, event):
+        self.medication_canvas.itemconfigure(
+            self.medication_canvas_window,
+            width=event.width,
+        )
+
     def add_medication(self):
         try:
             medication = medication_stock.add_medication(
@@ -1124,6 +1178,27 @@ class MedicationTab(BaseTab):
             return
 
         self.show_info("Medication added", f'Created medication {medication["id"]}.')
+        self.clear_form()
+        self.app_frame.refresh_all()
+
+    def delete_medication(self):
+        medication_id = self.medication_id_var.get()
+        if not medication_id:
+            self.show_error("Delete medication", "Select a medication first.")
+            return
+
+        if not messagebox.askyesno(
+            "Delete medication",
+            f"Delete medication {medication_id} from the system?",
+        ):
+            return
+
+        try:
+            medication_stock.delete_medication(medication_id)
+        except ValueError as exc:
+            self.show_error("Medication not deleted", exc)
+            return
+
         self.clear_form()
         self.app_frame.refresh_all()
 

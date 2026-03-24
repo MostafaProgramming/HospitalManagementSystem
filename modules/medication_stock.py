@@ -85,14 +85,52 @@ def resupply_medication(medication_id, amount):
         raise ValueError("Resupply amount must be greater than 0.")
 
     medication = medications[medication_id]
-    medication["currentQty"] = min(
-        medication["currentQty"] + amount,
-        medication["maxStock"],
-    )
+    new_total = medication["currentQty"] + amount
+    if new_total > medication["maxStock"]:
+        raise ValueError(
+            "Resupply amount must keep the stock at or below the maximum stock level."
+        )
+
+    medication["currentQty"] = new_total
     medication["updated_at"] = str(datetime.datetime.now())
 
     _save_medications(medications)
     return medication
+
+
+def delete_medication(medication_id):
+    medications = _load_medications()
+
+    if medication_id not in medications:
+        raise ValueError("Medication not found.")
+
+    deleted_medication = medications.pop(medication_id)
+    medication_name = deleted_medication["name"]
+
+    reminders = load_data("data/reminders.json")
+    reminders = {
+        reminder_id: reminder
+        for reminder_id, reminder in reminders.items()
+        if reminder.get("medication_id") != medication_id
+    }
+
+    patients = load_data("data/patients.json")
+    for patient in patients.values():
+        if patient.get("medication") == medication_name:
+            patient["medication"] = ""
+            patient["updated_at"] = str(datetime.datetime.now())
+
+        administrations = [
+            administration
+            for administration in patient.get("medications", [])
+            if administration.get("medication_id") != medication_id
+        ]
+        patient["medications"] = administrations
+
+    _save_medications(medications)
+    save_data("data/reminders.json", reminders)
+    save_data("data/patients.json", patients)
+    return deleted_medication
 
 
 def administer_medication(medication_id, patient_id, dosage):
