@@ -5,23 +5,28 @@ from utils.id_generator import assign_image_id
 from utils.json_storage import load_data, save_data
 
 
+# This file stores medical image records linked to patients.
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def _load_images():
+    # Read image records from storage.
     return load_data("data/medical_images.json")
 
 
 def _save_images(images):
+    # Save changed image records.
     save_data("data/medical_images.json", images)
 
 
 def list_medical_images():
+    # Return image records in a tidy order by patient and date.
     images = _load_images()
     return sorted(images.values(), key=lambda image: (image["patient_id"], image["captured_on"]))
 
 
 def get_medical_image(image_id):
+    # Return one image record.
     images = _load_images()
 
     if image_id not in images:
@@ -31,6 +36,7 @@ def get_medical_image(image_id):
 
 
 def add_medical_image(patient_id, image_type, body_part, captured_on, file_path, uploaded_by, notes=""):
+    # Save a medical image record after checking the patient and date.
     patients = load_data("data/patients.json")
     images = _load_images()
 
@@ -65,6 +71,7 @@ def add_medical_image(patient_id, image_type, body_part, captured_on, file_path,
 
 
 def delete_medical_image(image_id):
+    # Remove an image record from the system.
     images = _load_images()
 
     if image_id not in images:

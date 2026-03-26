@@ -1,6 +1,7 @@
 import re
 
 
+# These counters are only used if there is no saved data to inspect yet.
 current_user_id = 1
 current_session_id = 1
 current_patient_id = 1
@@ -13,6 +14,7 @@ current_reminder_id = 1
 
 
 def generate_prefixed_id(prefix, records=None, width=3):
+    # Find the highest existing ID with the given prefix and add 1.
     if records:
         highest_value = 0
         pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
@@ -28,6 +30,7 @@ def generate_prefixed_id(prefix, records=None, width=3):
 
 
 def _assign_from_counter(prefix, counter_name, width=3):
+    # Fallback used when there are no existing records yet.
     globals_dict = globals()
     identifier = f"{prefix}{globals_dict[counter_name]:0{width}d}"
     globals_dict[counter_name] += 1
@@ -35,6 +38,7 @@ def _assign_from_counter(prefix, counter_name, width=3):
 
 
 def assign_user_id(records=None):
+    # Users are stored by username, so we look inside each record for the real userID.
     if records:
         highest_value = 0
         pattern = re.compile(r"^U(\d+)$")

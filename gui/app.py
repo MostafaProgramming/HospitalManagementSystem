@@ -18,7 +18,6 @@ from modules import (
     staff_availability,
 )
 
-
 CARD_BG = "#f8f1e7"
 PAGE_BG = "#efe3d3"
 PANEL_BG = "#fffaf4"
@@ -160,27 +159,10 @@ class LoginFrame(ttk.Frame):
             font=("Georgia", 28, "bold"),
             justify="left",
         ).pack(anchor="w")
-        tk.Label(
-            hero,
-            text=(
-                "Desktop NEA build with secure login, patient records, medication "
-                "stock, bookings, reminders, staffing, and medical images."
-            ),
-            bg=ACCENT,
-            fg="#e7eef2",
-            font=("Segoe UI", 11),
-            wraplength=280,
-            justify="left",
-        ).pack(anchor="w", pady=(18, 0))
 
         ttk.Label(form, text="Welcome back", style="Header.TLabel").grid(
             row=0, column=0, columnspan=2, sticky="w"
         )
-        ttk.Label(
-            form,
-            text="Use an existing account or register a new staff member.",
-            style="SubHeader.TLabel",
-        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 18))
 
         self.username_var = tk.StringVar()
         self.password_var = tk.StringVar()
@@ -194,7 +176,7 @@ class LoginFrame(ttk.Frame):
             ("Signup Key", self.signup_key_var),
         ]
 
-        for index, (label, variable) in enumerate(fields, start=2):
+        for index, (label, variable) in enumerate(fields, start=1):
             ttk.Label(form, text=label, style="Panel.TLabel").grid(
                 row=index, column=0, sticky="w", pady=(0, 6)
             )
@@ -217,16 +199,16 @@ class LoginFrame(ttk.Frame):
             text=auth_system.get_signup_key_hint(),
             style="SubHeader.TLabel",
             wraplength=280,
-        ).grid(row=6, column=0, columnspan=2, sticky="w", pady=(4, 14))
+        ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(4, 14))
         ttk.Button(form, text="Login", style="App.TButton", command=self.login).grid(
-            row=7, column=0, sticky="ew", pady=(0, 8)
+            row=6, column=0, sticky="ew", pady=(0, 8)
         )
         ttk.Button(
             form,
             text="Register",
             style="Accent.TButton",
             command=self.register,
-        ).grid(row=7, column=1, sticky="ew", padx=(10, 0), pady=(0, 8))
+        ).grid(row=6, column=1, sticky="ew", padx=(10, 0), pady=(0, 8))
 
         form.columnconfigure(1, weight=1)
         shell.columnconfigure(1, weight=1)
@@ -524,7 +506,6 @@ class BaseTab(ttk.Frame):
         scrollbar.pack(side="right", fill="y")
         return tree
 
-
 class DashboardTab(BaseTab):
     def __init__(self, master, app_frame):
         super().__init__(master, app_frame)
@@ -682,7 +663,6 @@ class DashboardTab(BaseTab):
         tree.delete(*tree.get_children())
         for row in rows:
             tree.insert("", "end", values=row)
-
 
 class PatientsTab(BaseTab):
     def __init__(self, master, app_frame):
@@ -968,7 +948,6 @@ class PatientsTab(BaseTab):
                     patient.get("medication", ""),
                 ),
             )
-
 
 class MedicationTab(BaseTab):
     def __init__(self, master, app_frame):
@@ -1290,7 +1269,6 @@ class MedicationTab(BaseTab):
                 ),
                 tags=(tag,),
             )
-
 
 class RoomsTab(BaseTab):
     def __init__(self, master, app_frame):
@@ -1825,7 +1803,6 @@ class RoomsTab(BaseTab):
         else:
             self._clear_booking_details()
 
-
 class AvailabilityTab(BaseTab):
     def __init__(self, master, app_frame):
         super().__init__(master, app_frame)
@@ -2009,7 +1986,6 @@ class AvailabilityTab(BaseTab):
                     record["status"],
                 ),
             )
-
 
 class ImagesTab(BaseTab):
     def __init__(self, master, app_frame):
@@ -2295,7 +2271,6 @@ class ImagesTab(BaseTab):
         self.preview_photo = photo
         self.preview_label.configure(image=self.preview_photo, text="")
         self.preview_caption_var.set(str(path))
-
 
 class RemindersTab(BaseTab):
     def __init__(self, master, app_frame):

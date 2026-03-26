@@ -8,6 +8,7 @@ from utils.id_generator import assign_session_id, assign_user_id
 from utils.json_storage import load_data, save_data
 
 
+# This file handles user accounts, login, logout, and session tracking.
 SESSION_DURATION_MINUTES = 20
 
 current_user = None
@@ -16,22 +17,27 @@ sessions = {}
 
 
 def _load_users():
+    # Read all saved users from the JSON file.
     return load_data("data/users.json")
 
 
 def _save_users(users):
+    # Save the changed users back to the JSON file.
     save_data("data/users.json", users)
 
 
 def _load_config():
+    # Read system settings such as the signup key.
     return load_data("data/config.json")
 
 
 def _save_config(config):
+    # Save changed settings back to the JSON file.
     save_data("data/config.json", config)
 
 
 def _find_username(users, username):
+    # Match usernames without caring about upper/lower case.
     lowered = username.strip().lower()
     for existing_username in users:
         if existing_username.lower() == lowered:
@@ -40,15 +46,18 @@ def _find_username(users, username):
 
 
 def has_users():
+    # Used to tell whether this is the first account in the system.
     return len(_load_users()) > 0
 
 
 def list_users():
+    # Return users in alphabetical order for staff dropdowns and tables.
     users = _load_users()
     return sorted(users.values(), key=lambda user: user["username"].lower())
 
 
 def register_user(role, username, password, signup_key=None):
+    # Create a new staff account after checking the input is valid.
     users = _load_users()
     config = _load_config()
 
@@ -80,6 +89,7 @@ def register_user(role, username, password, signup_key=None):
         config["signup_key"] = signup_key
         _save_config(config)
 
+    # A random salt is added so that matching passwords do not produce matching hashes.
     salt = "".join(random.choices(string.ascii_letters + string.digits, k=8))
     user_id = assign_user_id(users)
 
@@ -99,6 +109,7 @@ def register_user(role, username, password, signup_key=None):
 
 
 def authenticate_user(username, password):
+    # Check login details and mark the matched user as the active session.
     global current_session
     global current_user
 
@@ -109,6 +120,7 @@ def authenticate_user(username, password):
         raise ValueError("Username not found.")
 
     user = users[matched_username]
+    # The entered password is hashed with the saved salt before comparison.
     test_hash = hash_password(password + user["salt"])
 
     if test_hash != user["password_hash"]:
@@ -121,6 +133,7 @@ def authenticate_user(username, password):
     user["active"] = True
     _save_users(users)
 
+    # A session token is created so the app can track the logged in user in memory.
     token = assign_session_id(sessions)
     session = Session(token, matched_username, SESSION_DURATION_MINUTES)
     sessions[token] = session
@@ -131,6 +144,7 @@ def authenticate_user(username, password):
 
 
 def logout_user():
+    # Mark the user as logged out and close the in-memory session.
     global current_session
     global current_user
 
@@ -149,10 +163,12 @@ def logout_user():
 
 
 def get_current_user():
+    # Return a copy so the caller cannot accidentally edit the real session object.
     return dict(current_user) if current_user else None
 
 
 def get_signup_key_hint():
+    # The first user creates the signup key. Later users must enter it.
     if has_users():
         return "Enter the staff signup key."
     return "Create the signup key for future staff accounts."

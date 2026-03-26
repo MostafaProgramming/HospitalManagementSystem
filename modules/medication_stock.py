@@ -3,19 +3,23 @@ import datetime
 from utils.id_generator import assign_medication_id
 from utils.json_storage import load_data, save_data
 
+# This file handles medication stock and medication administration.
 MIN_DOSAGE = 1
 MAX_DOSAGE = 10
 
 
 def _load_medications():
+    # Read medication stock from storage.
     return load_data("data/medications.json")
 
 
 def _save_medications(medications):
+    # Save medication stock after changes.
     save_data("data/medications.json", medications)
 
 
 def validate_dosage(dosage):
+    # Central safety rule used everywhere medication is administered.
     if dosage < MIN_DOSAGE or dosage > MAX_DOSAGE:
         raise ValueError(
             f"Dosage must be between {MIN_DOSAGE} and {MAX_DOSAGE}."
@@ -23,6 +27,7 @@ def validate_dosage(dosage):
 
 
 def list_medications(low_stock_only=False):
+    # Return either all medications or only the ones at low stock level.
     medications = load_data("data/medications.json")
     items = list(medications.values())
 
@@ -37,6 +42,7 @@ def list_medications(low_stock_only=False):
 
 
 def get_medication(medication_id):
+    # Return one medication record.
     medications = _load_medications()
     if medication_id not in medications:
         raise ValueError("Medication not found.")
@@ -44,6 +50,7 @@ def get_medication(medication_id):
 
 
 def add_medication(name, category, description, max_stock, reorder_level, initial_qty=None):
+    # Add a medication item to the stock system.
     name = name.strip()
     category = category.strip()
     description = description.strip()
@@ -86,6 +93,7 @@ def add_medication(name, category, description, max_stock, reorder_level, initia
 
 
 def resupply_medication(medication_id, amount):
+    # Increase stock, but never allow stock to go above the maximum.
     medications = _load_medications()
 
     if medication_id not in medications:
@@ -109,6 +117,7 @@ def resupply_medication(medication_id, amount):
 
 
 def delete_medication(medication_id):
+    # Delete the medication and clean up linked reminders and patient references.
     medications = _load_medications()
 
     if medication_id not in medications:
@@ -144,6 +153,7 @@ def delete_medication(medication_id):
 
 
 def administer_medication(medication_id, patient_id, dosage):
+    # Reduce stock and save the medication administration in the patient record.
     medications = _load_medications()
     patients = load_data("data/patients.json")
 

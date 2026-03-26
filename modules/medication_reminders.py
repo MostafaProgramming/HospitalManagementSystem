@@ -5,23 +5,28 @@ from utils.id_generator import assign_reminder_id
 from utils.json_storage import load_data, save_data
 
 
+# This file manages repeat medication reminders.
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 DEFAULT_SNOOZE_MINUTES = 5
 
 
 def _load_reminders():
+    # Read reminder records from storage.
     return load_data("data/reminders.json")
 
 
 def _save_reminders(reminders):
+    # Save updated reminder data.
     save_data("data/reminders.json", reminders)
 
 
 def _parse_datetime(value):
+    # Convert saved reminder date text into a datetime object.
     return datetime.datetime.strptime(value.strip(), DATETIME_FORMAT)
 
 
 def _get_frequency_minutes(reminder):
+    # Supports both the newer minute format and the older hour format.
     if "frequency_minutes" in reminder:
         return int(reminder["frequency_minutes"])
 
@@ -32,6 +37,7 @@ def _get_frequency_minutes(reminder):
 
 
 def _normalise_reminder(reminder):
+    # Return reminders in one consistent format for the GUI to display.
     reminder_copy = dict(reminder)
     reminder_copy["frequency_minutes"] = _get_frequency_minutes(reminder)
     reminder_copy.pop("frequency_hours", None)
@@ -39,6 +45,7 @@ def _normalise_reminder(reminder):
 
 
 def list_reminders(due_only=False):
+    # Return all reminders, or only the ones that are currently due.
     reminders = _load_reminders()
     items = [_normalise_reminder(reminder) for reminder in reminders.values()]
 
@@ -56,6 +63,7 @@ def list_reminders(due_only=False):
 
 
 def get_reminder(reminder_id):
+    # Return one reminder record.
     reminders = _load_reminders()
 
     if reminder_id not in reminders:
@@ -65,6 +73,7 @@ def get_reminder(reminder_id):
 
 
 def add_reminder(patient_id, medication_id, dosage, frequency_minutes, next_due, notes=""):
+    # Create a new reminder and save the medication, patient, dosage, and next due time.
     patients = load_data("data/patients.json")
     medications = load_data("data/medications.json")
     reminders = _load_reminders()
@@ -101,6 +110,7 @@ def add_reminder(patient_id, medication_id, dosage, frequency_minutes, next_due,
 
 
 def administer_reminder(reminder_id):
+    # Give the medication now, reduce stock, and move the reminder forward.
     reminders = _load_reminders()
 
     if reminder_id not in reminders:
@@ -129,11 +139,13 @@ def administer_reminder(reminder_id):
 
 
 def mark_reminder_completed(reminder_id):
+    # Older name kept for compatibility. It now just administers the reminder.
     reminder, _medication, _patient = administer_reminder(reminder_id)
     return reminder
 
 
 def snooze_reminder(reminder_id, delay_minutes=DEFAULT_SNOOZE_MINUTES):
+    # Push the reminder forward by a small amount of time.
     reminders = _load_reminders()
 
     if reminder_id not in reminders:
@@ -152,6 +164,7 @@ def snooze_reminder(reminder_id, delay_minutes=DEFAULT_SNOOZE_MINUTES):
 
 
 def toggle_reminder(reminder_id):
+    # Pause or resume a reminder.
     reminders = _load_reminders()
 
     if reminder_id not in reminders:
@@ -165,6 +178,7 @@ def toggle_reminder(reminder_id):
 
 
 def delete_reminder(reminder_id):
+    # Remove a reminder from the system.
     reminders = _load_reminders()
 
     if reminder_id not in reminders:

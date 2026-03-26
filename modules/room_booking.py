@@ -5,32 +5,39 @@ from utils.id_generator import assign_booking_id, assign_room_id
 from utils.json_storage import load_data, save_data
 
 
+# This file manages rooms and bookings.
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 
 
 def _load_rooms():
+    # Read room records from storage.
     return load_data("data/rooms.json")
 
 
 def _save_rooms(rooms):
+    # Save room changes.
     save_data("data/rooms.json", rooms)
 
 
 def _load_bookings():
+    # Read room bookings from storage.
     return load_data("data/bookings.json")
 
 
 def _save_bookings(bookings):
+    # Save changed booking data.
     save_data("data/bookings.json", bookings)
 
 
 def _parse_datetime(value):
+    # Accept either a datetime object or a saved string and return a datetime.
     if isinstance(value, datetime.datetime):
         return value
     return datetime.datetime.strptime(value.strip(), DATETIME_FORMAT)
 
 
 def get_room_status(room_id, at_time=None, rooms=None, bookings=None):
+    # Work out whether a room is free or currently booked.
     if at_time is None:
         at_time = datetime.datetime.now()
 
@@ -55,6 +62,7 @@ def get_room_status(room_id, at_time=None, rooms=None, bookings=None):
 
 
 def list_rooms(reference_time=None):
+    # Return all rooms with their live availability status.
     rooms = _load_rooms()
     bookings = _load_bookings()
     room_items = []
@@ -73,6 +81,7 @@ def list_rooms(reference_time=None):
 
 
 def add_room(room_label, room_type, capacity, notes="", status="Available"):
+    # Create a new room record.
     if not room_label.strip():
         raise ValueError("Room label is required.")
 
@@ -97,6 +106,7 @@ def add_room(room_label, room_type, capacity, notes="", status="Available"):
 
 
 def delete_room(room_id):
+    # Only allow a room to be deleted if it is not tied to existing bookings.
     rooms = _load_rooms()
     bookings = _load_bookings()
 
@@ -113,6 +123,7 @@ def delete_room(room_id):
 
 
 def list_bookings(room_id=None, upcoming_only=False):
+    # Return bookings, with optional filtering by room or by future-only bookings.
     bookings = _load_bookings()
     items = list(bookings.values())
 
@@ -132,6 +143,7 @@ def list_bookings(room_id=None, upcoming_only=False):
 
 
 def is_room_available(room_id, start_time, end_time, ignore_booking_id=None):
+    # Check whether a room is free in a chosen time period.
     start_dt = _parse_datetime(start_time)
     end_dt = _parse_datetime(end_time)
 
@@ -160,6 +172,7 @@ def is_room_available(room_id, start_time, end_time, ignore_booking_id=None):
 
 
 def list_available_rooms(start_time, end_time):
+    # Return the rooms that are free in the requested time slot.
     start_dt = _parse_datetime(start_time)
     end_dt = _parse_datetime(end_time)
     available = []
@@ -172,6 +185,7 @@ def list_available_rooms(start_time, end_time):
 
 
 def create_booking(room_id, staff_id, patient_id, start_time, end_time, purpose="Consultation"):
+    # Create a booking after checking the room, patient, staff member, and time slot.
     rooms = _load_rooms()
     patients = load_data("data/patients.json")
     users = load_data("data/users.json")
@@ -212,6 +226,7 @@ def create_booking(room_id, staff_id, patient_id, start_time, end_time, purpose=
 
 
 def cancel_booking(booking_id):
+    # Remove a booking from the system.
     bookings = _load_bookings()
 
     if booking_id not in bookings:

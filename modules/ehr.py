@@ -4,27 +4,34 @@ from utils.id_generator import assign_patient_id
 from utils.json_storage import load_data, save_data
 
 
+# This file is the patient records backend.
+# It validates patient details and saves patient data.
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def _load_patients():
+    # Read all patient records from storage.
     return load_data("data/patients.json")
 
 
 def _save_patients(patients):
+    # Save updated patient records.
     save_data("data/patients.json", patients)
 
 
 def _ensure_patient_exists(patients, patient_id):
+    # Stop the program from editing or deleting a patient that is not there.
     if patient_id not in patients:
         raise ValueError("Patient not found.")
 
 
 def _contains_digits(value):
+    # Used by validation rules for fields that should not contain numbers.
     return any(character.isdigit() for character in value)
 
 
 def _validate_patient_fields(first_name, last_name, email, phone, dob, condition, medication, notes):
+    # Check that the patient form has sensible and safe input values.
     if not first_name.strip():
         raise ValueError("First name is required.")
 
@@ -67,6 +74,7 @@ def _validate_patient_fields(first_name, last_name, email, phone, dob, condition
 
 
 def list_patients(search_text=""):
+    # Return all patients, or only the ones that match the search box.
     patients = _load_patients()
     items = list(patients.values())
 
@@ -85,12 +93,14 @@ def list_patients(search_text=""):
 
 
 def get_patient(patient_id):
+    # Return one full patient record.
     patients = _load_patients()
     _ensure_patient_exists(patients, patient_id)
     return patients[patient_id]
 
 
 def add_patient(first_name, last_name, email, phone, dob, condition, medication, notes=""):
+    # Create a new patient and give them a unique patient ID.
     _validate_patient_fields(
         first_name,
         last_name,
@@ -126,6 +136,7 @@ def add_patient(first_name, last_name, email, phone, dob, condition, medication,
 
 
 def update_patient(patient_id, first_name, last_name, email, phone, dob, condition, medication, notes=""):
+    # Save changes to an existing patient record.
     _validate_patient_fields(
         first_name,
         last_name,
@@ -160,6 +171,7 @@ def update_patient(patient_id, first_name, last_name, email, phone, dob, conditi
 
 
 def delete_patient(patient_id):
+    # Remove the patient and also remove linked records that depend on that patient.
     patients = _load_patients()
     _ensure_patient_exists(patients, patient_id)
 

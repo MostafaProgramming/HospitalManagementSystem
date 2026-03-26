@@ -4,24 +4,29 @@ from utils.id_generator import assign_availability_id
 from utils.json_storage import load_data, save_data
 
 
+# This file manages staff shifts and automatically works out staff status.
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M"
 BOOKING_DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 
 
 def _load_availability():
+    # Read all staff availability records.
     return load_data("data/staff_availability.json")
 
 
 def _save_availability(availability):
+    # Save updated staff availability records.
     save_data("data/staff_availability.json", availability)
 
 
 def _parse_time(value):
+    # Convert time text like 09:00 into a time object.
     return datetime.datetime.strptime(value.strip(), TIME_FORMAT)
 
 
 def _parse_shift_bounds(record):
+    # Turn a saved shift record into real start and end datetimes.
     shift_start = datetime.datetime.strptime(
         f'{record["shift_date"]} {record["shift_start"]}',
         BOOKING_DATETIME_FORMAT,
@@ -34,6 +39,8 @@ def _parse_shift_bounds(record):
 
 
 def get_staff_status(staff_id, at_time=None, availability=None, bookings=None):
+    # Staff are On Leave outside shift time, Unavailable during active bookings,
+    # and Available when on shift with no active booking.
     if at_time is None:
         at_time = datetime.datetime.now()
 
@@ -77,6 +84,7 @@ def get_staff_status(staff_id, at_time=None, availability=None, bookings=None):
 
 
 def validate_staff_booking(staff_id, start_time, end_time, ignore_booking_id=None):
+    # Stop a staff member being booked outside shift time or in overlapping rooms.
     availability = _load_availability()
     bookings = load_data("data/bookings.json")
 
@@ -126,6 +134,7 @@ def validate_staff_booking(staff_id, start_time, end_time, ignore_booking_id=Non
 
 
 def list_availability(reference_time=None):
+    # Return shift records and calculate the current status for each one.
     availability = _load_availability()
     bookings = load_data("data/bookings.json")
     items = []
@@ -147,6 +156,7 @@ def list_availability(reference_time=None):
 
 
 def add_availability(staff_id, shift_date, shift_start, shift_end, notes=""):
+    # Add a new shift record for a staff member.
     users = load_data("data/users.json")
     availability = _load_availability()
 
@@ -199,6 +209,7 @@ def add_availability(staff_id, shift_date, shift_start, shift_end, notes=""):
 
 
 def delete_availability(availability_id):
+    # Remove a saved shift record.
     availability = _load_availability()
 
     if availability_id not in availability:
