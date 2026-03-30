@@ -171,34 +171,20 @@ def update_patient(patient_id, first_name, last_name, email, phone, dob, conditi
 
 
 def delete_patient(patient_id):
-    # Remove the patient and also remove linked records that depend on that patient.
+    # Remove the patient and any linked reminders.
     patients = _load_patients()
     _ensure_patient_exists(patients, patient_id)
 
-    bookings = load_data("data/bookings.json")
     reminders = load_data("data/reminders.json")
-    medical_image_records = load_data("data/medical_images.json")
 
     deleted_patient = patients.pop(patient_id)
 
-    bookings = {
-        booking_id: booking
-        for booking_id, booking in bookings.items()
-        if booking.get("patient_id") != patient_id
-    }
     reminders = {
         reminder_id: reminder
         for reminder_id, reminder in reminders.items()
         if reminder.get("patient_id") != patient_id
     }
-    medical_image_records = {
-        image_id: image
-        for image_id, image in medical_image_records.items()
-        if image.get("patient_id") != patient_id
-    }
 
     _save_patients(patients)
-    save_data("data/bookings.json", bookings)
     save_data("data/reminders.json", reminders)
-    save_data("data/medical_images.json", medical_image_records)
     return deleted_patient

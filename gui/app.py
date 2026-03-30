@@ -1,7 +1,6 @@
 import datetime
 import tkinter as tk
-from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import messagebox, ttk
 
 try:
     import winsound
@@ -9,14 +8,8 @@ except ImportError:
     winsound = None
 
 from auth import auth_system
-from modules import (
-    ehr,
-    medication_reminders,
-    medication_stock,
-    medical_images,
-    room_booking,
-    staff_availability,
-)
+from modules import ehr, medication_reminders, medication_stock
+
 
 CARD_BG = "#f8f1e7"
 PAGE_BG = "#efe3d3"
@@ -37,12 +30,12 @@ class HospitalApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Hospital Management System")
-        self.geometry("1440x900")
-        self.minsize(1180, 780)
+        self.geometry("1320x860")
+        self.minsize(1120, 720)
         self.configure(bg=PAGE_BG)
 
-        self._configure_style()
         self.current_frame = None
+        self._configure_style()
         self.show_login()
 
     def _configure_style(self):
@@ -52,7 +45,6 @@ class HospitalApp(tk.Tk):
         style.configure(".", font=("Segoe UI", 10), foreground=TEXT)
         style.configure("App.TFrame", background=PAGE_BG)
         style.configure("Panel.TFrame", background=PANEL_BG)
-        style.configure("Card.TFrame", background=CARD_BG, relief="flat")
         style.configure("App.TLabel", background=PAGE_BG, foreground=TEXT)
         style.configure("Panel.TLabel", background=PANEL_BG, foreground=TEXT)
         style.configure(
@@ -142,23 +134,8 @@ class LoginFrame(ttk.Frame):
         super().__init__(master, style="App.TFrame", padding=36)
         self.master = master
 
-        shell = ttk.Frame(self, style="App.TFrame")
-        shell.place(relx=0.5, rely=0.5, anchor="center")
-
-        hero = tk.Frame(shell, bg=ACCENT, padx=28, pady=24)
-        hero.grid(row=0, column=0, sticky="nsew")
-
-        form = ttk.Frame(shell, style="Panel.TFrame", padding=28)
-        form.grid(row=0, column=1, sticky="nsew")
-
-        tk.Label(
-            hero,
-            text="Hospital\nManagement\nSystem",
-            bg=ACCENT,
-            fg="white",
-            font=("Georgia", 28, "bold"),
-            justify="left",
-        ).pack(anchor="w")
+        form = ttk.Frame(self, style="Panel.TFrame", padding=28)
+        form.place(relx=0.5, rely=0.5, anchor="center")
 
         ttk.Label(form, text="Welcome back", style="Header.TLabel").grid(
             row=0, column=0, columnspan=2, sticky="w"
@@ -176,30 +153,31 @@ class LoginFrame(ttk.Frame):
             ("Signup Key", self.signup_key_var),
         ]
 
-        for index, (label, variable) in enumerate(fields, start=1):
+        for row, (label, variable) in enumerate(fields, start=1):
             ttk.Label(form, text=label, style="Panel.TLabel").grid(
-                row=index, column=0, sticky="w", pady=(0, 6)
+                row=row, column=0, sticky="w", pady=(0, 6)
             )
             if label == "Password":
-                widget = ttk.Entry(form, textvariable=variable, show="*", width=28)
+                widget = ttk.Entry(form, textvariable=variable, show="*", width=30)
             elif label == "Role":
                 widget = ttk.Combobox(
                     form,
                     textvariable=variable,
-                    width=26,
+                    width=28,
                     state="readonly",
-                    values=("Doctor", "Nurse", "Admin", "Receptionist", "Radiographer"),
+                    values=("Doctor", "Nurse", "Admin", "Receptionist", "Pharmacist"),
                 )
             else:
-                widget = ttk.Entry(form, textvariable=variable, width=28)
-            widget.grid(row=index, column=1, sticky="ew", pady=(0, 10))
+                widget = ttk.Entry(form, textvariable=variable, width=30)
+            widget.grid(row=row, column=1, sticky="ew", pady=(0, 10))
 
         ttk.Label(
             form,
             text=auth_system.get_signup_key_hint(),
             style="SubHeader.TLabel",
-            wraplength=280,
+            wraplength=320,
         ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(4, 14))
+
         ttk.Button(form, text="Login", style="App.TButton", command=self.login).grid(
             row=6, column=0, sticky="ew", pady=(0, 8)
         )
@@ -211,7 +189,6 @@ class LoginFrame(ttk.Frame):
         ).grid(row=6, column=1, sticky="ew", padx=(10, 0), pady=(0, 8))
 
         form.columnconfigure(1, weight=1)
-        shell.columnconfigure(1, weight=1)
 
     def login(self):
         try:
@@ -251,7 +228,7 @@ class MainFrame(ttk.Frame):
         self.reminder_check_job = None
 
         self._build_header()
-        self._build_notebook()
+        self._build_tabs()
         self._schedule_reminder_check()
 
     def _build_header(self):
@@ -260,6 +237,7 @@ class MainFrame(ttk.Frame):
 
         title_block = ttk.Frame(header, style="App.TFrame")
         title_block.pack(side="left", fill="x", expand=True)
+
         ttk.Label(
             title_block,
             text="Hospital Management System",
@@ -267,10 +245,7 @@ class MainFrame(ttk.Frame):
         ).pack(anchor="w")
         ttk.Label(
             title_block,
-            text=(
-                "Manage clinical records, staffing, stock, bookings, and follow-up "
-                "reminders from one place."
-            ),
+            text="Manage patient records, medication stock, and reminders from one place.",
             style="SubHeader.TLabel",
         ).pack(anchor="w", pady=(2, 0))
 
@@ -292,7 +267,7 @@ class MainFrame(ttk.Frame):
         ).pack(anchor="e")
         tk.Label(
             user_card,
-            text=f'{self.user["role"]} • {self.user["userID"]}',
+            text=f'{self.user["role"]} | {self.user["userID"]}',
             bg=CARD_BG,
             fg=MUTED,
             font=("Segoe UI", 10),
@@ -304,34 +279,25 @@ class MainFrame(ttk.Frame):
             command=self.logout,
         ).pack(anchor="e", pady=(10, 0))
 
-    def _build_notebook(self):
+    def _build_tabs(self):
         notebook = ttk.Notebook(self)
         notebook.pack(fill="both", expand=True)
 
         self.dashboard_tab = DashboardTab(notebook, self)
         self.patients_tab = PatientsTab(notebook, self)
         self.medication_tab = MedicationTab(notebook, self)
-        self.rooms_tab = RoomsTab(notebook, self)
-        self.availability_tab = AvailabilityTab(notebook, self)
-        self.images_tab = ImagesTab(notebook, self)
         self.reminders_tab = RemindersTab(notebook, self)
 
         self.tabs = [
             self.dashboard_tab,
             self.patients_tab,
             self.medication_tab,
-            self.rooms_tab,
-            self.availability_tab,
-            self.images_tab,
             self.reminders_tab,
         ]
 
         notebook.add(self.dashboard_tab, text="Dashboard")
         notebook.add(self.patients_tab, text="Patients")
         notebook.add(self.medication_tab, text="Medication")
-        notebook.add(self.rooms_tab, text="Rooms")
-        notebook.add(self.availability_tab, text="Staff")
-        notebook.add(self.images_tab, text="Images")
         notebook.add(self.reminders_tab, text="Reminders")
 
         notebook.bind("<<NotebookTabChanged>>", lambda _event: self.refresh_all())
@@ -366,12 +332,6 @@ class MainFrame(ttk.Frame):
             for medication in medication_stock.list_medications()
         ]
 
-    def staff_options(self):
-        return [
-            f'{user["userID"]} - {user["username"]} ({user["role"]})'
-            for user in auth_system.list_users()
-        ]
-
     def _schedule_reminder_check(self):
         self._check_due_reminders()
         self.reminder_check_job = self.after(15000, self._schedule_reminder_check)
@@ -379,13 +339,9 @@ class MainFrame(ttk.Frame):
     def _check_due_reminders(self):
         for reminder in medication_reminders.list_reminders(due_only=True):
             reminder_id = reminder["reminder_id"]
-
-            if reminder_id in self.reminder_popup_windows:
-                popup = self.reminder_popup_windows[reminder_id]
-                if popup.winfo_exists():
-                    continue
-                self.reminder_popup_windows.pop(reminder_id, None)
-
+            popup = self.reminder_popup_windows.get(reminder_id)
+            if popup is not None and popup.winfo_exists():
+                continue
             self._show_reminder_popup(reminder)
 
     def _show_reminder_popup(self, reminder):
@@ -396,13 +352,16 @@ class MainFrame(ttk.Frame):
         popup.resizable(False, False)
         popup.transient(self.winfo_toplevel())
         popup.grab_set()
-
         self.reminder_popup_windows[reminder_id] = popup
-        self._play_reminder_alarm()
+
+        if winsound is not None:
+            winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+        else:
+            self.bell()
 
         try:
             patient = ehr.get_patient(reminder["patient_id"])
-            patient_name = f'{patient["first_name"]} {patient["last_name"]}'.strip()
+            patient_name = f'{patient["first_name"]} {patient["last_name"]}'
         except ValueError:
             patient_name = reminder["patient_id"]
 
@@ -414,8 +373,8 @@ class MainFrame(ttk.Frame):
             f'Due: {reminder["next_due"]}'
         )
 
-        ttk.Frame(popup, style="Panel.TFrame", padding=16).pack(fill="both", expand=True)
-        container = popup.winfo_children()[0]
+        container = ttk.Frame(popup, style="Panel.TFrame", padding=16)
+        container.pack(fill="both", expand=True)
         ttk.Label(container, text="Reminder Due", style="Header.TLabel").pack(anchor="w")
         ttk.Label(
             container,
@@ -438,7 +397,6 @@ class MainFrame(ttk.Frame):
             except ValueError as exc:
                 messagebox.showerror("Reminder not administered", str(exc), parent=popup)
                 return
-
             close_popup()
             self.refresh_all()
 
@@ -448,7 +406,6 @@ class MainFrame(ttk.Frame):
             except ValueError as exc:
                 messagebox.showerror("Reminder not snoozed", str(exc), parent=popup)
                 return
-
             close_popup()
             self.refresh_all()
 
@@ -467,12 +424,6 @@ class MainFrame(ttk.Frame):
             command=administer_later,
         ).pack(side="left", fill="x", expand=True, padx=(10, 0))
 
-    def _play_reminder_alarm(self):
-        if winsound is not None:
-            winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
-        else:
-            self.bell()
-
 
 class BaseTab(ttk.Frame):
     def __init__(self, master, app_frame):
@@ -485,14 +436,11 @@ class BaseTab(ttk.Frame):
     def show_info(self, title, message):
         messagebox.showinfo(title, message)
 
-    def refresh(self):
-        raise NotImplementedError
-
     @staticmethod
-    def _extract_identifier(combined_value):
-        if not combined_value:
+    def _extract_identifier(value):
+        if not value:
             return ""
-        return combined_value.split(" - ", 1)[0].strip()
+        return value.split(" - ", 1)[0].strip()
 
     @staticmethod
     def _validate_numeric_input(proposed_value):
@@ -506,6 +454,10 @@ class BaseTab(ttk.Frame):
         scrollbar.pack(side="right", fill="y")
         return tree
 
+    def refresh(self):
+        raise NotImplementedError
+
+
 class DashboardTab(BaseTab):
     def __init__(self, master, app_frame):
         super().__init__(master, app_frame)
@@ -518,9 +470,7 @@ class DashboardTab(BaseTab):
             ("patients", "Patients"),
             ("medications", "Medications"),
             ("low_stock", "Low Stock"),
-            ("bookings", "Upcoming Bookings"),
-            ("staff", "Scheduled Staff"),
-            ("reminders", "Registered Reminders"),
+            ("reminders", "Active Reminders"),
         ):
             card = tk.Frame(
                 cards,
@@ -567,33 +517,13 @@ class DashboardTab(BaseTab):
             self.low_stock_tree.heading(column, text=heading)
             self.low_stock_tree.column(column, width=width, anchor="center")
 
-        bookings_frame = ttk.LabelFrame(
-            lower,
-            text="Upcoming Bookings",
-            style="Section.TLabelframe",
-            padding=12,
-        )
-        bookings_frame.pack(side="left", fill="both", expand=True, padx=8)
-        self.booking_tree = self._make_tree(
-            bookings_frame,
-            ("booking", "room", "patient", "start"),
-        )
-        for column, heading, width in (
-            ("booking", "Booking", 90),
-            ("room", "Room", 90),
-            ("patient", "Patient", 90),
-            ("start", "Start", 150),
-        ):
-            self.booking_tree.heading(column, text=heading)
-            self.booking_tree.column(column, width=width, anchor="center")
-
         reminders_frame = ttk.LabelFrame(
             lower,
-            text="Registered Reminders",
+            text="Upcoming Reminders",
             style="Section.TLabelframe",
             padding=12,
         )
-        reminders_frame.pack(side="left", fill="both", expand=True, padx=(8, 0))
+        reminders_frame.pack(side="left", fill="both", expand=True, padx=(8, 8))
         self.reminder_tree = self._make_tree(
             reminders_frame,
             ("reminder", "patient", "medication", "due"),
@@ -607,23 +537,39 @@ class DashboardTab(BaseTab):
             self.reminder_tree.heading(column, text=heading)
             self.reminder_tree.column(column, width=width, anchor="center")
 
+        patients_frame = ttk.LabelFrame(
+            lower,
+            text="Recent Patients",
+            style="Section.TLabelframe",
+            padding=12,
+        )
+        patients_frame.pack(side="left", fill="both", expand=True, padx=(8, 0))
+        self.patient_tree = self._make_tree(
+            patients_frame,
+            ("patient", "name", "condition", "updated"),
+        )
+        for column, heading, width in (
+            ("patient", "Patient", 90),
+            ("name", "Name", 160),
+            ("condition", "Condition", 140),
+            ("updated", "Updated", 150),
+        ):
+            self.patient_tree.heading(column, text=heading)
+            self.patient_tree.column(column, width=width, anchor="center")
+
     def refresh(self):
         patients = ehr.list_patients()
         medications = medication_stock.list_medications()
         low_stock_items = medication_stock.list_medications(low_stock_only=True)
-        upcoming_bookings = room_booking.list_bookings(upcoming_only=True)[:10]
-        staff_items = staff_availability.list_availability()
         active_reminders = [
             reminder
             for reminder in medication_reminders.list_reminders()
             if reminder.get("active", True)
-        ][:10]
+        ]
 
         self.cards["patients"].configure(text=str(len(patients)))
         self.cards["medications"].configure(text=str(len(medications)))
         self.cards["low_stock"].configure(text=str(len(low_stock_items)))
-        self.cards["bookings"].configure(text=str(len(upcoming_bookings)))
-        self.cards["staff"].configure(text=str(len(staff_items)))
         self.cards["reminders"].configure(text=str(len(active_reminders)))
 
         self._fill_tree(
@@ -631,18 +577,6 @@ class DashboardTab(BaseTab):
             [
                 (item["id"], item["name"], f'{item["currentQty"]}/{item["maxStock"]}')
                 for item in low_stock_items[:10]
-            ],
-        )
-        self._fill_tree(
-            self.booking_tree,
-            [
-                (
-                    item["booking_id"],
-                    item["room_id"],
-                    item["patient_id"],
-                    item["start_time"],
-                )
-                for item in upcoming_bookings
             ],
         )
         self._fill_tree(
@@ -654,7 +588,19 @@ class DashboardTab(BaseTab):
                     item["medication_name"],
                     item["next_due"],
                 )
-                for item in active_reminders
+                for item in active_reminders[:10]
+            ],
+        )
+        self._fill_tree(
+            self.patient_tree,
+            [
+                (
+                    item["patient_id"],
+                    f'{item["first_name"]} {item["last_name"]}',
+                    item.get("condition", ""),
+                    item.get("updated_at", ""),
+                )
+                for item in patients[:10]
             ],
         )
 
@@ -664,9 +610,11 @@ class DashboardTab(BaseTab):
         for row in rows:
             tree.insert("", "end", values=row)
 
+
 class PatientsTab(BaseTab):
     def __init__(self, master, app_frame):
         super().__init__(master, app_frame)
+
         top = ttk.Frame(self, style="App.TFrame")
         top.pack(fill="x", pady=(0, 10))
 
@@ -690,7 +638,7 @@ class PatientsTab(BaseTab):
             left_shell,
             bg=PAGE_BG,
             highlightthickness=0,
-            width=450,
+            width=390,
         )
         form_scrollbar = ttk.Scrollbar(
             left_shell,
@@ -700,13 +648,13 @@ class PatientsTab(BaseTab):
         self.form_canvas.configure(yscrollcommand=form_scrollbar.set)
 
         self.form_container = ttk.Frame(self.form_canvas, style="App.TFrame")
-        self.form_canvas_window = self.form_canvas.create_window(
+        self.form_window = self.form_canvas.create_window(
             (0, 0),
             window=self.form_container,
             anchor="nw",
         )
         self.form_container.bind("<Configure>", self._update_form_scroll_region)
-        self.form_canvas.bind("<Configure>", self._resize_form_scroll_window)
+        self.form_canvas.bind("<Configure>", self._resize_form_width)
 
         self.form_canvas.pack(side="left", fill="y")
         form_scrollbar.pack(side="right", fill="y")
@@ -727,14 +675,16 @@ class PatientsTab(BaseTab):
         self.dob_var = tk.StringVar(value=datetime.date.today().strftime("%Y-%m-%d"))
         self.condition_var = tk.StringVar()
         self.medication_var = tk.StringVar()
+
         self.notes_text = tk.Text(
             form,
-            width=30,
-            height=7,
+            width=28,
+            height=6,
             wrap="word",
             font=("Segoe UI", 10),
         )
 
+        number_validate = (self.register(self._validate_numeric_input), "%P")
         fields = [
             ("Patient ID", self.patient_id_var, True),
             ("First Name", self.first_name_var, False),
@@ -743,11 +693,8 @@ class PatientsTab(BaseTab):
             ("Phone", self.phone_var, False),
             ("Date of Birth", self.dob_var, False),
             ("Condition", self.condition_var, False),
-            ("Current Medication", self.medication_var, False),
+            ("Medication", self.medication_var, False),
         ]
-
-        phone_validate = (self.register(self._validate_phone_input), "%P")
-        letters_validate = (self.register(self._validate_letters_input), "%P")
 
         for row, (label, variable, readonly) in enumerate(fields):
             ttk.Label(form, text=label, style="Panel.TLabel").grid(
@@ -757,12 +704,10 @@ class PatientsTab(BaseTab):
                 pady=(0, 6),
             )
             entry = ttk.Entry(form, textvariable=variable, width=30)
-            if label == "Phone":
-                entry.configure(validate="key", validatecommand=phone_validate)
-            elif label in {"First Name", "Last Name", "Condition", "Current Medication"}:
-                entry.configure(validate="key", validatecommand=letters_validate)
             if readonly:
                 entry.configure(state="readonly")
+            elif label == "Phone":
+                entry.configure(validate="key", validatecommand=number_validate)
             entry.grid(row=row, column=1, sticky="ew", pady=(0, 8))
 
         ttk.Label(form, text="Notes", style="Panel.TLabel").grid(
@@ -771,35 +716,34 @@ class PatientsTab(BaseTab):
             sticky="nw",
             pady=(0, 6),
         )
-        self.notes_text.grid(row=len(fields), column=1, sticky="ew", pady=(0, 10))
-        self.notes_text.bind("<KeyPress>", self._block_digit_keypress)
+        self.notes_text.grid(
+            row=len(fields),
+            column=1,
+            sticky="ew",
+            pady=(0, 8),
+        )
 
-        buttons = ttk.Frame(form, style="Panel.TFrame")
-        buttons.grid(row=len(fields) + 1, column=0, columnspan=2, sticky="ew")
+        ttk.Button(form, text="Add Patient", style="App.TButton", command=self.add_patient).grid(
+            row=len(fields) + 1, column=0, columnspan=2, sticky="ew", pady=(6, 6)
+        )
         ttk.Button(
-            buttons,
-            text="Add Patient",
-            style="App.TButton",
-            command=self.add_patient,
-        ).pack(side="left", fill="x", expand=True)
-        ttk.Button(
-            buttons,
-            text="Update",
+            form,
+            text="Update Patient",
             style="Accent.TButton",
             command=self.update_patient,
-        ).pack(side="left", fill="x", expand=True, padx=8)
+        ).grid(row=len(fields) + 2, column=0, columnspan=2, sticky="ew", pady=(0, 6))
         ttk.Button(
-            buttons,
-            text="Delete",
-            style="App.TButton",
+            form,
+            text="Delete Patient",
+            style="Accent.TButton",
             command=self.delete_patient,
-        ).pack(side="left", fill="x", expand=True)
+        ).grid(row=len(fields) + 3, column=0, columnspan=2, sticky="ew", pady=(0, 6))
         ttk.Button(
             form,
             text="Clear Form",
             style="Accent.TButton",
             command=self.clear_form,
-        ).grid(row=len(fields) + 2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        ).grid(row=len(fields) + 4, column=0, columnspan=2, sticky="ew")
 
         table_frame = ttk.LabelFrame(
             body,
@@ -808,45 +752,35 @@ class PatientsTab(BaseTab):
             padding=12,
         )
         table_frame.pack(side="left", fill="both", expand=True)
-
         self.tree = self._make_tree(
             table_frame,
-            ("id", "name", "dob", "condition", "medication"),
+            ("patient_id", "name", "dob", "condition", "medication"),
         )
         for column, heading, width in (
-            ("id", "Patient ID", 100),
+            ("patient_id", "Patient ID", 90),
             ("name", "Name", 180),
-            ("dob", "DOB", 120),
+            ("dob", "DOB", 100),
             ("condition", "Condition", 180),
             ("medication", "Medication", 160),
         ):
             self.tree.heading(column, text=heading)
             self.tree.column(column, width=width, anchor="center")
-
-        self.tree.bind("<<TreeviewSelect>>", self.on_select)
-        form.columnconfigure(1, weight=1)
+        self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
     def _update_form_scroll_region(self, _event):
         self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
 
-    def _resize_form_scroll_window(self, event):
-        self.form_canvas.itemconfigure(self.form_canvas_window, width=event.width)
+    def _resize_form_width(self, event):
+        self.form_canvas.itemconfigure(self.form_window, width=event.width)
 
-    @staticmethod
-    def _validate_phone_input(proposed_value):
-        return proposed_value.isdigit() or proposed_value == ""
+    def _notes(self):
+        return self.notes_text.get("1.0", "end").strip()
 
-    @staticmethod
-    def _validate_letters_input(proposed_value):
-        return not any(character.isdigit() for character in proposed_value)
+    def _set_notes(self, text):
+        self.notes_text.delete("1.0", "end")
+        self.notes_text.insert("1.0", text)
 
-    @staticmethod
-    def _block_digit_keypress(event):
-        if event.char and event.char.isdigit():
-            return "break"
-        return None
-
-    def _payload(self):
+    def _current_payload(self):
         return {
             "first_name": self.first_name_var.get(),
             "last_name": self.last_name_var.get(),
@@ -855,42 +789,46 @@ class PatientsTab(BaseTab):
             "dob": self.dob_var.get(),
             "condition": self.condition_var.get(),
             "medication": self.medication_var.get(),
-            "notes": self.notes_text.get("1.0", "end").strip(),
+            "notes": self._notes(),
         }
 
     def add_patient(self):
         try:
-            patient = ehr.add_patient(**self._payload())
+            patient = ehr.add_patient(**self._current_payload())
         except ValueError as exc:
             self.show_error("Patient not added", exc)
             return
 
-        self.show_info("Patient added", f'Created patient {patient["patient_id"]}.')
+        self.show_info("Patient added", f'Patient {patient["patient_id"]} was added.')
         self.clear_form()
         self.app_frame.refresh_all()
 
     def update_patient(self):
-        patient_id = self.patient_id_var.get()
+        patient_id = self.patient_id_var.get().strip()
         if not patient_id:
-            self.show_error("Update patient", "Select a patient first.")
+            self.show_error("No patient selected", "Select a patient to update.")
             return
 
         try:
-            ehr.update_patient(patient_id=patient_id, **self._payload())
+            patient = ehr.update_patient(patient_id=patient_id, **self._current_payload())
         except ValueError as exc:
             self.show_error("Patient not updated", exc)
             return
 
-        self.show_info("Patient updated", f"Saved changes to {patient_id}.")
+        self.show_info("Patient updated", f'Patient {patient["patient_id"]} was updated.')
         self.app_frame.refresh_all()
 
     def delete_patient(self):
-        patient_id = self.patient_id_var.get()
+        patient_id = self.patient_id_var.get().strip()
         if not patient_id:
-            self.show_error("Delete patient", "Select a patient first.")
+            self.show_error("No patient selected", "Select a patient to delete.")
             return
 
-        if not messagebox.askyesno("Delete patient", f"Delete patient {patient_id}?"):
+        if not messagebox.askyesno(
+            "Delete patient",
+            f"Delete patient {patient_id}?",
+            parent=self,
+        ):
             return
 
         try:
@@ -899,44 +837,41 @@ class PatientsTab(BaseTab):
             self.show_error("Patient not deleted", exc)
             return
 
+        self.show_info("Patient deleted", f"Patient {patient_id} was deleted.")
         self.clear_form()
         self.app_frame.refresh_all()
 
     def clear_form(self):
-        for variable in (
-            self.patient_id_var,
-            self.first_name_var,
-            self.last_name_var,
-            self.email_var,
-            self.phone_var,
-            self.condition_var,
-            self.medication_var,
-        ):
-            variable.set("")
+        self.patient_id_var.set("")
+        self.first_name_var.set("")
+        self.last_name_var.set("")
+        self.email_var.set("")
+        self.phone_var.set("")
         self.dob_var.set(datetime.date.today().strftime("%Y-%m-%d"))
-        self.notes_text.delete("1.0", "end")
+        self.condition_var.set("")
+        self.medication_var.set("")
+        self._set_notes("")
 
-    def on_select(self, _event):
+    def _on_tree_select(self, _event):
         selected = self.tree.selection()
         if not selected:
             return
+
         patient_id = self.tree.item(selected[0], "values")[0]
         patient = ehr.get_patient(patient_id)
         self.patient_id_var.set(patient["patient_id"])
-        self.first_name_var.set(patient.get("first_name", ""))
-        self.last_name_var.set(patient.get("last_name", ""))
-        self.email_var.set(patient.get("email", ""))
-        self.phone_var.set(patient.get("phone", ""))
-        self.dob_var.set(patient.get("dob", ""))
+        self.first_name_var.set(patient["first_name"])
+        self.last_name_var.set(patient["last_name"])
+        self.email_var.set(patient["email"])
+        self.phone_var.set(patient["phone"])
+        self.dob_var.set(patient["dob"])
         self.condition_var.set(patient.get("condition", ""))
         self.medication_var.set(patient.get("medication", ""))
-        self.notes_text.delete("1.0", "end")
-        self.notes_text.insert("1.0", patient.get("notes", ""))
+        self._set_notes(patient.get("notes", ""))
 
     def refresh(self):
-        patients = ehr.list_patients(self.search_var.get())
         self.tree.delete(*self.tree.get_children())
-        for patient in patients:
+        for patient in ehr.list_patients(search_text=self.search_var.get()):
             self.tree.insert(
                 "",
                 "end",
@@ -949,56 +884,49 @@ class PatientsTab(BaseTab):
                 ),
             )
 
+
 class MedicationTab(BaseTab):
     def __init__(self, master, app_frame):
         super().__init__(master, app_frame)
+
         body = ttk.Frame(self, style="App.TFrame")
         body.pack(fill="both", expand=True)
 
         left_shell = ttk.Frame(body, style="App.TFrame")
         left_shell.pack(side="left", fill="y", padx=(0, 10))
 
-        self.medication_canvas = tk.Canvas(
+        self.form_canvas = tk.Canvas(
             left_shell,
             bg=PAGE_BG,
             highlightthickness=0,
-            width=420,
+            width=410,
         )
-        medication_scrollbar = ttk.Scrollbar(
+        form_scrollbar = ttk.Scrollbar(
             left_shell,
             orient="vertical",
-            command=self.medication_canvas.yview,
+            command=self.form_canvas.yview,
         )
-        self.medication_canvas.configure(yscrollcommand=medication_scrollbar.set)
+        self.form_canvas.configure(yscrollcommand=form_scrollbar.set)
 
-        self.medication_form_container = ttk.Frame(
-            self.medication_canvas,
-            style="App.TFrame",
-        )
-        self.medication_canvas_window = self.medication_canvas.create_window(
+        self.form_container = ttk.Frame(self.form_canvas, style="App.TFrame")
+        self.form_window = self.form_canvas.create_window(
             (0, 0),
-            window=self.medication_form_container,
+            window=self.form_container,
             anchor="nw",
         )
-        self.medication_form_container.bind(
-            "<Configure>",
-            self._update_medication_scroll_region,
-        )
-        self.medication_canvas.bind(
-            "<Configure>",
-            self._resize_medication_scroll_window,
-        )
+        self.form_container.bind("<Configure>", self._update_form_scroll_region)
+        self.form_canvas.bind("<Configure>", self._resize_form_width)
 
-        self.medication_canvas.pack(side="left", fill="y")
-        medication_scrollbar.pack(side="right", fill="y")
+        self.form_canvas.pack(side="left", fill="y")
+        form_scrollbar.pack(side="right", fill="y")
 
-        left = ttk.LabelFrame(
-            self.medication_form_container,
+        form = ttk.LabelFrame(
+            self.form_container,
             text="Inventory Actions",
             style="Section.TLabelframe",
             padding=14,
         )
-        left.pack(fill="x")
+        form.pack(fill="x")
 
         self.medication_id_var = tk.StringVar()
         self.name_var = tk.StringVar()
@@ -1023,154 +951,135 @@ class MedicationTab(BaseTab):
         ]
 
         for row, (label, variable, readonly) in enumerate(fields):
-            ttk.Label(left, text=label, style="Panel.TLabel").grid(
-                row=row,
-                column=0,
-                sticky="w",
-                pady=(0, 6),
+            ttk.Label(form, text=label, style="Panel.TLabel").grid(
+                row=row, column=0, sticky="w", pady=(0, 6)
             )
-            entry = ttk.Entry(left, textvariable=variable, width=28)
+            entry = ttk.Entry(form, textvariable=variable, width=28)
             if readonly:
                 entry.configure(state="readonly")
+            elif label in {"Max Stock", "Reorder Level", "Initial Qty"}:
+                entry.configure(validate="key", validatecommand=number_validate)
             entry.grid(row=row, column=1, sticky="ew", pady=(0, 8))
 
         ttk.Button(
-            left,
+            form,
             text="Add Medication",
             style="App.TButton",
             command=self.add_medication,
         ).grid(row=7, column=0, columnspan=2, sticky="ew", pady=(6, 6))
         ttk.Button(
-            left,
+            form,
             text="Delete Medication",
             style="Accent.TButton",
             command=self.delete_medication,
         ).grid(row=8, column=0, columnspan=2, sticky="ew")
 
-        ttk.Separator(left, orient="horizontal").grid(
-            row=9,
-            column=0,
-            columnspan=2,
-            sticky="ew",
-            pady=8,
+        ttk.Separator(form, orient="horizontal").grid(
+            row=9, column=0, columnspan=2, sticky="ew", pady=8
         )
-        ttk.Label(left, text="Resupply Amount", style="Panel.TLabel").grid(
-            row=10,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
+
+        ttk.Label(form, text="Resupply Amount", style="Panel.TLabel").grid(
+            row=10, column=0, sticky="w", pady=(0, 6)
         )
-        ttk.Entry(left, textvariable=self.resupply_var, width=28).grid(
-            row=10,
-            column=1,
-            sticky="ew",
-            pady=(0, 8),
-        )
+        resupply_entry = ttk.Entry(form, textvariable=self.resupply_var, width=28)
+        resupply_entry.configure(validate="key", validatecommand=number_validate)
+        resupply_entry.grid(row=10, column=1, sticky="ew", pady=(0, 8))
         ttk.Button(
-            left,
+            form,
             text="Resupply",
             style="Accent.TButton",
             command=self.resupply_medication,
         ).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(0, 8))
 
-        ttk.Label(left, text="Patient", style="Panel.TLabel").grid(
-            row=12,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
+        ttk.Label(form, text="Patient", style="Panel.TLabel").grid(
+            row=12, column=0, sticky="w", pady=(0, 6)
         )
         self.patient_choice = ttk.Combobox(
-            left,
+            form,
             textvariable=self.patient_choice_var,
             width=26,
+            state="readonly",
         )
         self.patient_choice.grid(row=12, column=1, sticky="ew", pady=(0, 8))
-        ttk.Label(left, text="Dosage", style="Panel.TLabel").grid(
-            row=13,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
+
+        ttk.Label(form, text="Dosage", style="Panel.TLabel").grid(
+            row=13, column=0, sticky="w", pady=(0, 6)
         )
-        dosage_entry = ttk.Entry(left, textvariable=self.dosage_var, width=28)
+        dosage_entry = ttk.Entry(form, textvariable=self.dosage_var, width=28)
         dosage_entry.configure(validate="key", validatecommand=number_validate)
         dosage_entry.grid(row=13, column=1, sticky="ew", pady=(0, 8))
+
         ttk.Button(
-            left,
+            form,
             text="Administer",
             style="App.TButton",
             command=self.administer_medication,
-        ).grid(row=14, column=0, columnspan=2, sticky="ew")
+        ).grid(row=14, column=0, columnspan=2, sticky="ew", pady=(0, 8))
         ttk.Button(
-            left,
+            form,
             text="Clear Form",
             style="Accent.TButton",
             command=self.clear_form,
-        ).grid(row=15, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        ).grid(row=15, column=0, columnspan=2, sticky="ew")
 
-        right = ttk.LabelFrame(
+        table_frame = ttk.LabelFrame(
             body,
             text="Medication Stock",
             style="Section.TLabelframe",
             padding=12,
         )
-        right.pack(side="left", fill="both", expand=True)
+        table_frame.pack(side="left", fill="both", expand=True)
 
         self.tree = self._make_tree(
-            right,
+            table_frame,
             ("id", "name", "category", "stock", "reorder"),
         )
         for column, heading, width in (
-            ("id", "Medication ID", 110),
-            ("name", "Name", 190),
+            ("id", "ID", 90),
+            ("name", "Name", 180),
             ("category", "Category", 140),
             ("stock", "Stock", 120),
             ("reorder", "Reorder Level", 120),
         ):
             self.tree.heading(column, text=heading)
             self.tree.column(column, width=width, anchor="center")
+        self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
-        self.tree.tag_configure("low", background="#f7d9c9")
-        self.tree.bind("<<TreeviewSelect>>", self.on_select)
-        left.columnconfigure(1, weight=1)
+    def _update_form_scroll_region(self, _event):
+        self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
 
-    def _update_medication_scroll_region(self, _event):
-        self.medication_canvas.configure(
-            scrollregion=self.medication_canvas.bbox("all")
-        )
-
-    def _resize_medication_scroll_window(self, event):
-        self.medication_canvas.itemconfigure(
-            self.medication_canvas_window,
-            width=event.width,
-        )
+    def _resize_form_width(self, event):
+        self.form_canvas.itemconfigure(self.form_window, width=event.width)
 
     def add_medication(self):
+        initial_qty = self.initial_qty_var.get().strip()
         try:
             medication = medication_stock.add_medication(
-                self.name_var.get(),
-                self.category_var.get(),
-                self.description_var.get(),
-                int(self.max_stock_var.get()),
-                int(self.reorder_level_var.get()),
-                int(self.initial_qty_var.get() or self.max_stock_var.get()),
+                name=self.name_var.get(),
+                category=self.category_var.get(),
+                description=self.description_var.get(),
+                max_stock=int(self.max_stock_var.get()),
+                reorder_level=int(self.reorder_level_var.get()),
+                initial_qty=int(initial_qty) if initial_qty else None,
             )
-        except (ValueError, TypeError) as exc:
+        except (TypeError, ValueError) as exc:
             self.show_error("Medication not added", exc)
             return
 
-        self.show_info("Medication added", f'Created medication {medication["id"]}.')
+        self.show_info("Medication added", f'{medication["name"]} was added.')
         self.clear_form()
         self.app_frame.refresh_all()
 
     def delete_medication(self):
-        medication_id = self.medication_id_var.get()
+        medication_id = self.medication_id_var.get().strip()
         if not medication_id:
-            self.show_error("Delete medication", "Select a medication first.")
+            self.show_error("No medication selected", "Select a medication to delete.")
             return
 
         if not messagebox.askyesno(
             "Delete medication",
-            f"Delete medication {medication_id} from the system?",
+            f"Delete medication {medication_id}?",
+            parent=self,
         ):
             return
 
@@ -1180,33 +1089,40 @@ class MedicationTab(BaseTab):
             self.show_error("Medication not deleted", exc)
             return
 
+        self.show_info("Medication deleted", f"Medication {medication_id} was deleted.")
         self.clear_form()
         self.app_frame.refresh_all()
 
     def resupply_medication(self):
-        medication_id = self.medication_id_var.get()
+        medication_id = self.medication_id_var.get().strip()
         if not medication_id:
-            self.show_error("Resupply medication", "Select a medication first.")
+            self.show_error("No medication selected", "Select a medication to resupply.")
             return
 
         try:
-            medication_stock.resupply_medication(
+            medication = medication_stock.resupply_medication(
                 medication_id,
                 int(self.resupply_var.get()),
             )
-        except (ValueError, TypeError) as exc:
+        except (TypeError, ValueError) as exc:
             self.show_error("Medication not resupplied", exc)
             return
 
+        self.show_info(
+            "Medication resupplied",
+            f'Stock is now {medication["currentQty"]}/{medication["maxStock"]}.',
+        )
         self.resupply_var.set("")
         self.app_frame.refresh_all()
 
     def administer_medication(self):
-        medication_id = self.medication_id_var.get()
+        medication_id = self.medication_id_var.get().strip()
         patient_id = self._extract_identifier(self.patient_choice_var.get())
-
-        if not medication_id:
-            self.show_error("Administer medication", "Select a medication first.")
+        if not medication_id or not patient_id:
+            self.show_error(
+                "Missing information",
+                "Select a medication and a patient before administering medication.",
+            )
             return
 
         try:
@@ -1215,29 +1131,27 @@ class MedicationTab(BaseTab):
                 patient_id,
                 int(self.dosage_var.get()),
             )
-        except (ValueError, TypeError) as exc:
+        except (TypeError, ValueError) as exc:
             self.show_error("Medication not administered", exc)
             return
 
+        self.show_info("Medication administered", "The dosage was recorded successfully.")
         self.dosage_var.set("")
         self.app_frame.refresh_all()
 
     def clear_form(self):
-        for variable in (
-            self.medication_id_var,
-            self.name_var,
-            self.category_var,
-            self.description_var,
-            self.max_stock_var,
-            self.reorder_level_var,
-            self.initial_qty_var,
-            self.patient_choice_var,
-            self.dosage_var,
-            self.resupply_var,
-        ):
-            variable.set("")
+        self.medication_id_var.set("")
+        self.name_var.set("")
+        self.category_var.set("")
+        self.description_var.set("")
+        self.max_stock_var.set("")
+        self.reorder_level_var.set("")
+        self.initial_qty_var.set("")
+        self.patient_choice_var.set("")
+        self.dosage_var.set("")
+        self.resupply_var.set("")
 
-    def on_select(self, _event):
+    def _on_tree_select(self, _event):
         selected = self.tree.selection()
         if not selected:
             return
@@ -1269,1012 +1183,13 @@ class MedicationTab(BaseTab):
                 ),
                 tags=(tag,),
             )
+        self.tree.tag_configure("low", background="#ffe8d6")
 
-class RoomsTab(BaseTab):
-    def __init__(self, master, app_frame):
-        super().__init__(master, app_frame)
-
-        container = ttk.Frame(self, style="App.TFrame")
-        container.pack(fill="both", expand=True)
-
-        left_shell = ttk.Frame(container, style="App.TFrame")
-        left_shell.pack(side="left", fill="y", padx=(0, 10))
-
-        self.left_canvas = tk.Canvas(
-            left_shell,
-            bg=PAGE_BG,
-            highlightthickness=0,
-            width=360,
-        )
-        left_scrollbar = ttk.Scrollbar(
-            left_shell,
-            orient="vertical",
-            command=self.left_canvas.yview,
-        )
-        self.left_canvas.configure(yscrollcommand=left_scrollbar.set)
-
-        self.left_form_container = ttk.Frame(self.left_canvas, style="App.TFrame")
-        self.left_canvas_window = self.left_canvas.create_window(
-            (0, 0),
-            window=self.left_form_container,
-            anchor="nw",
-        )
-
-        self.left_form_container.bind(
-            "<Configure>",
-            self._update_left_scroll_region,
-        )
-        self.left_canvas.bind(
-            "<Configure>",
-            self._resize_left_scroll_window,
-        )
-
-        self.left_canvas.pack(side="left", fill="y")
-        left_scrollbar.pack(side="right", fill="y")
-
-        left = self.left_form_container
-
-        room_frame = ttk.LabelFrame(
-            left,
-            text="Add Room",
-            style="Section.TLabelframe",
-            padding=14,
-        )
-        room_frame.pack(fill="x")
-        self.room_id_var = tk.StringVar()
-        self.room_label_var = tk.StringVar()
-        self.room_type_var = tk.StringVar(value="Consultation")
-        self.capacity_var = tk.StringVar(value="1")
-        self.room_notes_var = tk.StringVar()
-
-        for row, (label, variable, readonly) in enumerate(
-            (
-                ("Room ID", self.room_id_var, True),
-                ("Label", self.room_label_var, False),
-                ("Type", self.room_type_var, False),
-                ("Capacity", self.capacity_var, False),
-                ("Notes", self.room_notes_var, False),
-            )
-        ):
-            ttk.Label(room_frame, text=label, style="Panel.TLabel").grid(
-                row=row,
-                column=0,
-                sticky="w",
-                pady=(0, 6),
-            )
-            entry = ttk.Entry(room_frame, textvariable=variable, width=28)
-            if readonly:
-                entry.configure(state="readonly")
-            entry.grid(row=row, column=1, sticky="ew", pady=(0, 8))
-
-        ttk.Button(
-            room_frame,
-            text="Add Room",
-            style="App.TButton",
-            command=self.add_room,
-        ).grid(row=5, column=0, columnspan=2, sticky="ew")
-        ttk.Button(
-            room_frame,
-            text="Delete Room",
-            style="Accent.TButton",
-            command=self.delete_room,
-        ).grid(row=6, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-
-        booking_frame = ttk.LabelFrame(
-            left,
-            text="Create Booking",
-            style="Section.TLabelframe",
-            padding=14,
-        )
-        booking_frame.pack(fill="x", pady=(12, 0))
-
-        self.booking_room_var = tk.StringVar()
-        self.staff_choice_var = tk.StringVar()
-        self.booking_patient_var = tk.StringVar()
-        default_start = datetime.datetime.now().replace(
-            minute=0,
-            second=0,
-            microsecond=0,
-        )
-        self.start_time_var = tk.StringVar(
-            value=default_start.strftime("%Y-%m-%d %H:%M")
-        )
-        self.end_time_var = tk.StringVar(
-            value=(default_start + datetime.timedelta(hours=1)).strftime(
-                "%Y-%m-%d %H:%M"
-            )
-        )
-        self.purpose_var = tk.StringVar(value="Consultation")
-        self.detail_booking_id_var = tk.StringVar(value="Select a booking")
-        self.detail_room_var = tk.StringVar(value="-")
-        self.detail_staff_var = tk.StringVar(value="-")
-        self.detail_patient_var = tk.StringVar(value="-")
-        self.detail_time_var = tk.StringVar(value="-")
-        self.detail_purpose_var = tk.StringVar(value="-")
-        self.detail_status_var = tk.StringVar(value="-")
-
-        ttk.Label(booking_frame, text="Room", style="Panel.TLabel").grid(
-            row=0,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        self.room_choice = ttk.Combobox(
-            booking_frame,
-            textvariable=self.booking_room_var,
-            width=26,
-        )
-        self.room_choice.grid(row=0, column=1, sticky="ew", pady=(0, 8))
-        ttk.Label(booking_frame, text="Staff", style="Panel.TLabel").grid(
-            row=1,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        self.staff_choice = ttk.Combobox(
-            booking_frame,
-            textvariable=self.staff_choice_var,
-            width=26,
-        )
-        self.staff_choice.grid(row=1, column=1, sticky="ew", pady=(0, 8))
-        ttk.Label(booking_frame, text="Patient", style="Panel.TLabel").grid(
-            row=2,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        self.patient_choice = ttk.Combobox(
-            booking_frame,
-            textvariable=self.booking_patient_var,
-            width=26,
-        )
-        self.patient_choice.grid(row=2, column=1, sticky="ew", pady=(0, 8))
-
-        for row, label, variable in (
-            (3, "Start", self.start_time_var),
-            (4, "End", self.end_time_var),
-            (5, "Purpose", self.purpose_var),
-        ):
-            ttk.Label(booking_frame, text=label, style="Panel.TLabel").grid(
-                row=row,
-                column=0,
-                sticky="w",
-                pady=(0, 6),
-            )
-            ttk.Entry(booking_frame, textvariable=variable, width=28).grid(
-                row=row,
-                column=1,
-                sticky="ew",
-                pady=(0, 8),
-            )
-
-        ttk.Button(
-            booking_frame,
-            text="Find Available Rooms",
-            style="Accent.TButton",
-            command=self.find_available_rooms,
-        ).grid(row=6, column=0, columnspan=2, sticky="ew")
-        self.available_rooms_label = ttk.Label(
-            booking_frame,
-            text="",
-            style="SubHeader.TLabel",
-            wraplength=280,
-        )
-        self.available_rooms_label.grid(
-            row=7,
-            column=0,
-            columnspan=2,
-            sticky="w",
-            pady=(8, 6),
-        )
-        ttk.Button(
-            booking_frame,
-            text="Create Booking",
-            style="App.TButton",
-            command=self.create_booking,
-        ).grid(row=8, column=0, columnspan=2, sticky="ew")
-        ttk.Button(
-            booking_frame,
-            text="Cancel Selected Booking",
-            style="Accent.TButton",
-            command=self.cancel_booking,
-        ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-
-        details_frame = ttk.LabelFrame(
-            left,
-            text="Booking Details",
-            style="Section.TLabelframe",
-            padding=14,
-        )
-        details_frame.pack(fill="x", pady=(12, 0))
-
-        detail_fields = (
-            ("Booking", self.detail_booking_id_var),
-            ("Room", self.detail_room_var),
-            ("Staff", self.detail_staff_var),
-            ("Patient", self.detail_patient_var),
-            ("Time", self.detail_time_var),
-            ("Purpose", self.detail_purpose_var),
-            ("Status", self.detail_status_var),
-        )
-
-        for row, (label, variable) in enumerate(detail_fields):
-            ttk.Label(details_frame, text=label, style="Panel.TLabel").grid(
-                row=row,
-                column=0,
-                sticky="nw",
-                pady=(0, 6),
-            )
-            ttk.Label(
-                details_frame,
-                textvariable=variable,
-                style="Panel.TLabel",
-                wraplength=250,
-                justify="left",
-            ).grid(row=row, column=1, sticky="w", pady=(0, 6))
-
-        room_frame.columnconfigure(1, weight=1)
-        booking_frame.columnconfigure(1, weight=1)
-        details_frame.columnconfigure(1, weight=1)
-
-        right = ttk.Frame(container, style="App.TFrame")
-        right.pack(side="left", fill="both", expand=True)
-
-        rooms_table = ttk.LabelFrame(
-            right,
-            text="Rooms",
-            style="Section.TLabelframe",
-            padding=12,
-        )
-        rooms_table.pack(fill="both", expand=True, pady=(0, 10))
-        self.rooms_tree = self._make_tree(
-            rooms_table,
-            ("id", "label", "type", "capacity", "status"),
-        )
-        for column, heading, width in (
-            ("id", "Room ID", 90),
-            ("label", "Label", 130),
-            ("type", "Type", 150),
-            ("capacity", "Capacity", 90),
-            ("status", "Status", 120),
-        ):
-            self.rooms_tree.heading(column, text=heading)
-            self.rooms_tree.column(column, width=width, anchor="center")
-        self.rooms_tree.bind("<<TreeviewSelect>>", self.on_room_select)
-
-        bookings_table = ttk.LabelFrame(
-            right,
-            text="Bookings",
-            style="Section.TLabelframe",
-            padding=12,
-        )
-        bookings_table.pack(fill="both", expand=True)
-        self.bookings_tree = self._make_tree(
-            bookings_table,
-            ("id", "room", "staff", "patient", "start", "end"),
-        )
-        for column, heading, width in (
-            ("id", "Booking ID", 90),
-            ("room", "Room", 90),
-            ("staff", "Staff", 90),
-            ("patient", "Patient", 90),
-            ("start", "Start", 150),
-            ("end", "End", 150),
-        ):
-            self.bookings_tree.heading(column, text=heading)
-            self.bookings_tree.column(column, width=width, anchor="center")
-        self.bookings_tree.bind("<<TreeviewSelect>>", self.on_booking_select)
-
-    def _update_left_scroll_region(self, _event):
-        self.left_canvas.configure(scrollregion=self.left_canvas.bbox("all"))
-
-    def _resize_left_scroll_window(self, event):
-        self.left_canvas.itemconfigure(self.left_canvas_window, width=event.width)
-
-    def add_room(self):
-        try:
-            room = room_booking.add_room(
-                self.room_label_var.get(),
-                self.room_type_var.get(),
-                int(self.capacity_var.get()),
-                self.room_notes_var.get(),
-            )
-        except (ValueError, TypeError) as exc:
-            self.show_error("Room not added", exc)
-            return
-
-        self.show_info("Room added", f'Created room {room["room_id"]}.')
-        self.room_label_var.set("")
-        self.room_notes_var.set("")
-        self.capacity_var.set("1")
-        self.app_frame.refresh_all()
-
-    def delete_room(self):
-        room_id = self.room_id_var.get()
-        if not room_id:
-            self.show_error("Delete room", "Select a room first.")
-            return
-
-        try:
-            room_booking.delete_room(room_id)
-        except ValueError as exc:
-            self.show_error("Room not deleted", exc)
-            return
-
-        self.room_id_var.set("")
-        self.app_frame.refresh_all()
-
-    def find_available_rooms(self):
-        try:
-            available = room_booking.list_available_rooms(
-                self.start_time_var.get(),
-                self.end_time_var.get(),
-            )
-        except ValueError as exc:
-            self.show_error("Availability lookup failed", exc)
-            return
-
-        labels = ", ".join(room["room_label"] for room in available)
-        self.available_rooms_label.configure(
-            text=labels or "No rooms available for that timeslot."
-        )
-
-    def create_booking(self):
-        try:
-            booking = room_booking.create_booking(
-                self._extract_identifier(self.booking_room_var.get()),
-                self._extract_identifier(self.staff_choice_var.get()),
-                self._extract_identifier(self.booking_patient_var.get()),
-                self.start_time_var.get(),
-                self.end_time_var.get(),
-                self.purpose_var.get(),
-            )
-        except ValueError as exc:
-            self.show_error("Booking not created", exc)
-            return
-
-        self.show_info("Booking created", f'Created booking {booking["booking_id"]}.')
-        self.app_frame.refresh_all()
-        self._set_booking_details(booking["booking_id"])
-
-    def cancel_booking(self):
-        selected = self.bookings_tree.selection()
-        if not selected:
-            self.show_error("Cancel booking", "Select a booking first.")
-            return
-
-        booking_id = self.bookings_tree.item(selected[0], "values")[0]
-        try:
-            room_booking.cancel_booking(booking_id)
-        except ValueError as exc:
-            self.show_error("Booking not cancelled", exc)
-            return
-
-        self.app_frame.refresh_all()
-        self._clear_booking_details()
-
-    def on_room_select(self, _event):
-        selected = self.rooms_tree.selection()
-        if not selected:
-            return
-
-        room_id, label, room_type, capacity, _status = self.rooms_tree.item(
-            selected[0],
-            "values",
-        )
-        self.room_id_var.set(room_id)
-        self.room_label_var.set(label)
-        self.room_type_var.set(room_type)
-        self.capacity_var.set(capacity)
-        self.booking_room_var.set(f"{room_id} - {label}")
-
-    def on_booking_select(self, _event):
-        selected = self.bookings_tree.selection()
-        if not selected:
-            self._clear_booking_details()
-            return
-
-        booking_id = self.bookings_tree.item(selected[0], "values")[0]
-        self._set_booking_details(booking_id)
-
-    def _booking_lookup_maps(self):
-        rooms = {
-            room["room_id"]: room
-            for room in room_booking.list_rooms()
-        }
-        staff = {
-            user["userID"]: user
-            for user in auth_system.list_users()
-        }
-        patients = {
-            patient["patient_id"]: patient
-            for patient in ehr.list_patients()
-        }
-        return rooms, staff, patients
-
-    def _set_booking_details(self, booking_id):
-        booking = next(
-            (
-                booking_item
-                for booking_item in room_booking.list_bookings()
-                if booking_item["booking_id"] == booking_id
-            ),
-            None,
-        )
-
-        if booking is None:
-            self._clear_booking_details()
-            return
-
-        rooms, staff, patients = self._booking_lookup_maps()
-        room = rooms.get(booking["room_id"], {})
-        staff_member = staff.get(booking["staff_id"], {})
-        patient = patients.get(booking["patient_id"], {})
-
-        room_name = room.get("room_label", booking["room_id"])
-        staff_name = staff_member.get("username", booking["staff_id"])
-        patient_name = " ".join(
-            part
-            for part in (
-                patient.get("first_name", "").strip(),
-                patient.get("last_name", "").strip(),
-            )
-            if part
-        ) or booking["patient_id"]
-
-        start_time = datetime.datetime.strptime(
-            booking["start_time"],
-            "%Y-%m-%d %H:%M",
-        )
-        end_time = datetime.datetime.strptime(
-            booking["end_time"],
-            "%Y-%m-%d %H:%M",
-        )
-        now = datetime.datetime.now()
-
-        if now < start_time:
-            booking_status = "Upcoming"
-        elif start_time <= now < end_time:
-            booking_status = "In progress"
-        else:
-            booking_status = "Completed"
-
-        self.detail_booking_id_var.set(booking["booking_id"])
-        self.detail_room_var.set(f'{booking["room_id"]} - {room_name}')
-        self.detail_staff_var.set(
-            f'{booking["staff_id"]} - {staff_name} ({staff_member.get("role", "Staff")})'
-        )
-        self.detail_patient_var.set(f'{booking["patient_id"]} - {patient_name}')
-        self.detail_time_var.set(f'{booking["start_time"]} to {booking["end_time"]}')
-        self.detail_purpose_var.set(booking.get("purpose", "Consultation"))
-        self.detail_status_var.set(booking_status)
-
-    def _clear_booking_details(self):
-        self.detail_booking_id_var.set("Select a booking")
-        self.detail_room_var.set("-")
-        self.detail_staff_var.set("-")
-        self.detail_patient_var.set("-")
-        self.detail_time_var.set("-")
-        self.detail_purpose_var.set("-")
-        self.detail_status_var.set("-")
-
-    def refresh(self):
-        room_options = [
-            f'{room["room_id"]} - {room["room_label"]}'
-            for room in room_booking.list_rooms()
-        ]
-        self.room_choice.configure(values=room_options)
-        self.staff_choice.configure(values=self.app_frame.staff_options())
-        self.patient_choice.configure(values=self.app_frame.patient_options())
-
-        self.rooms_tree.delete(*self.rooms_tree.get_children())
-        for room in room_booking.list_rooms():
-            self.rooms_tree.insert(
-                "",
-                "end",
-                values=(
-                    room["room_id"],
-                    room["room_label"],
-                    room["room_type"],
-                    room["capacity"],
-                    room["status"],
-                ),
-            )
-
-        self.bookings_tree.delete(*self.bookings_tree.get_children())
-        for booking in room_booking.list_bookings():
-            self.bookings_tree.insert(
-                "",
-                "end",
-                values=(
-                    booking["booking_id"],
-                    booking["room_id"],
-                    booking["staff_id"],
-                    booking["patient_id"],
-                    booking["start_time"],
-                    booking["end_time"],
-                ),
-            )
-
-        selected = self.bookings_tree.selection()
-        if selected:
-            booking_id = self.bookings_tree.item(selected[0], "values")[0]
-            self._set_booking_details(booking_id)
-        else:
-            self._clear_booking_details()
-
-class AvailabilityTab(BaseTab):
-    def __init__(self, master, app_frame):
-        super().__init__(master, app_frame)
-
-        shell = ttk.Frame(self, style="App.TFrame")
-        shell.pack(fill="both", expand=True)
-
-        form = ttk.LabelFrame(
-            shell,
-            text="Schedule Staff",
-            style="Section.TLabelframe",
-            padding=14,
-        )
-        form.pack(side="left", fill="y", padx=(0, 10))
-
-        self.staff_var = tk.StringVar()
-        self.shift_date_var = tk.StringVar(value=datetime.date.today().strftime("%Y-%m-%d"))
-        self.shift_start_var = tk.StringVar(value="09:00")
-        self.shift_end_var = tk.StringVar(value="17:00")
-        self.status_var = tk.StringVar(value="Calculated automatically")
-        self.notes_var = tk.StringVar()
-        self.record_id_var = tk.StringVar()
-
-        ttk.Label(form, text="Record ID", style="Panel.TLabel").grid(
-            row=0,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        ttk.Entry(
-            form,
-            textvariable=self.record_id_var,
-            width=28,
-            state="readonly",
-        ).grid(row=0, column=1, sticky="ew", pady=(0, 8))
-
-        ttk.Label(form, text="Staff Member", style="Panel.TLabel").grid(
-            row=1,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        self.staff_choice = ttk.Combobox(form, textvariable=self.staff_var, width=26)
-        self.staff_choice.grid(row=1, column=1, sticky="ew", pady=(0, 8))
-
-        for row, label, variable in (
-            (2, "Shift Date", self.shift_date_var),
-            (3, "Shift Start", self.shift_start_var),
-            (4, "Shift End", self.shift_end_var),
-            (5, "Notes", self.notes_var),
-        ):
-            ttk.Label(form, text=label, style="Panel.TLabel").grid(
-                row=row,
-                column=0,
-                sticky="w",
-                pady=(0, 6),
-            )
-            widget = ttk.Entry(form, textvariable=variable, width=28)
-            widget.grid(row=row, column=1, sticky="ew", pady=(0, 8))
-
-        ttk.Label(form, text="Current Status", style="Panel.TLabel").grid(
-            row=6,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        ttk.Entry(
-            form,
-            textvariable=self.status_var,
-            width=28,
-            state="readonly",
-        ).grid(row=6, column=1, sticky="ew", pady=(0, 4))
-        ttk.Label(
-            form,
-            text="Derived from shift times and active room bookings.",
-            style="SubHeader.TLabel",
-            wraplength=260,
-        ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(0, 8))
-
-        ttk.Button(
-            form,
-            text="Add Availability",
-            style="App.TButton",
-            command=self.add_availability,
-        ).grid(row=8, column=0, columnspan=2, sticky="ew")
-        ttk.Button(
-            form,
-            text="Delete Selected",
-            style="Accent.TButton",
-            command=self.delete_availability,
-        ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-        form.columnconfigure(1, weight=1)
-
-        table = ttk.LabelFrame(
-            shell,
-            text="Availability Records",
-            style="Section.TLabelframe",
-            padding=12,
-        )
-        table.pack(side="left", fill="both", expand=True)
-
-        self.tree = self._make_tree(
-            table,
-            ("id", "staff", "role", "date", "start", "end", "status"),
-        )
-        for column, heading, width in (
-            ("id", "Record", 90),
-            ("staff", "Staff", 160),
-            ("role", "Role", 120),
-            ("date", "Date", 110),
-            ("start", "Start", 90),
-            ("end", "End", 90),
-            ("status", "Status", 110),
-        ):
-            self.tree.heading(column, text=heading)
-            self.tree.column(column, width=width, anchor="center")
-        self.tree.bind("<<TreeviewSelect>>", self.on_select)
-
-    def add_availability(self):
-        try:
-            record = staff_availability.add_availability(
-                self._extract_identifier(self.staff_var.get()),
-                self.shift_date_var.get(),
-                self.shift_start_var.get(),
-                self.shift_end_var.get(),
-                self.notes_var.get(),
-            )
-        except ValueError as exc:
-            self.show_error("Availability not added", exc)
-            return
-
-        self.show_info("Availability added", f'Created shift {record["availability_id"]}.')
-        self.record_id_var.set("")
-        self.app_frame.refresh_all()
-
-    def delete_availability(self):
-        availability_id = self.record_id_var.get()
-        if not availability_id:
-            self.show_error("Delete availability", "Select a record first.")
-            return
-
-        try:
-            staff_availability.delete_availability(availability_id)
-        except ValueError as exc:
-            self.show_error("Availability not deleted", exc)
-            return
-
-        self.record_id_var.set("")
-        self.app_frame.refresh_all()
-
-    def on_select(self, _event):
-        selected = self.tree.selection()
-        if not selected:
-            return
-        values = self.tree.item(selected[0], "values")
-        self.record_id_var.set(values[0])
-        self.staff_var.set(values[1])
-        self.shift_date_var.set(values[3])
-        self.shift_start_var.set(values[4])
-        self.shift_end_var.set(values[5])
-        self.status_var.set(values[6])
-
-    def refresh(self):
-        self.staff_choice.configure(values=self.app_frame.staff_options())
-        self.tree.delete(*self.tree.get_children())
-        self.status_var.set("Calculated automatically")
-        for record in staff_availability.list_availability():
-            display_staff = (
-                f'{record["staff_id"]} - {record["staff_name"]} ({record["role"]})'
-            )
-            self.tree.insert(
-                "",
-                "end",
-                values=(
-                    record["availability_id"],
-                    display_staff,
-                    record["role"],
-                    record["shift_date"],
-                    record["shift_start"],
-                    record["shift_end"],
-                    record["status"],
-                ),
-            )
-
-class ImagesTab(BaseTab):
-    def __init__(self, master, app_frame):
-        super().__init__(master, app_frame)
-
-        shell = ttk.Frame(self, style="App.TFrame")
-        shell.pack(fill="both", expand=True)
-
-        form = ttk.LabelFrame(
-            shell,
-            text="Attach Medical Image",
-            style="Section.TLabelframe",
-            padding=14,
-        )
-        form.pack(side="left", fill="y", padx=(0, 10))
-
-        self.image_id_var = tk.StringVar()
-        self.patient_var = tk.StringVar()
-        self.image_type_var = tk.StringVar(value="X-Ray")
-        self.body_part_var = tk.StringVar()
-        self.captured_on_var = tk.StringVar(value=datetime.date.today().strftime("%Y-%m-%d"))
-        self.file_path_var = tk.StringVar()
-        self.notes_var = tk.StringVar()
-        self.preview_caption_var = tk.StringVar(value="Choose or select an image to preview it here.")
-        self.preview_photo = None
-
-        ttk.Label(form, text="Image ID", style="Panel.TLabel").grid(
-            row=0,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        ttk.Entry(
-            form,
-            textvariable=self.image_id_var,
-            state="readonly",
-            width=28,
-        ).grid(row=0, column=1, sticky="ew", pady=(0, 8))
-        ttk.Label(form, text="Patient", style="Panel.TLabel").grid(
-            row=1,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        self.patient_choice = ttk.Combobox(form, textvariable=self.patient_var, width=26)
-        self.patient_choice.grid(row=1, column=1, sticky="ew", pady=(0, 8))
-
-        for row, label, variable in (
-            (2, "Image Type", self.image_type_var),
-            (3, "Body Part", self.body_part_var),
-            (4, "Captured On", self.captured_on_var),
-            (6, "Notes", self.notes_var),
-        ):
-            ttk.Label(form, text=label, style="Panel.TLabel").grid(
-                row=row,
-                column=0,
-                sticky="w",
-                pady=(0, 6),
-            )
-            if label == "Image Type":
-                widget = ttk.Combobox(
-                    form,
-                    textvariable=variable,
-                    width=26,
-                    state="readonly",
-                    values=("X-Ray", "MRI", "CT Scan", "Ultrasound", "Photo"),
-                )
-            else:
-                widget = ttk.Entry(form, textvariable=variable, width=28)
-            widget.grid(row=row, column=1, sticky="ew", pady=(0, 8))
-
-        ttk.Label(form, text="File Path", style="Panel.TLabel").grid(
-            row=5,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-        ttk.Entry(form, textvariable=self.file_path_var, width=28).grid(
-            row=5,
-            column=1,
-            sticky="ew",
-            pady=(0, 8),
-        )
-        ttk.Button(
-            form,
-            text="Browse",
-            style="Accent.TButton",
-            command=self.browse_file,
-        ).grid(row=5, column=2, padx=(8, 0), pady=(0, 8))
-
-        ttk.Button(
-            form,
-            text="Add Image",
-            style="App.TButton",
-            command=self.add_image,
-        ).grid(row=7, column=0, columnspan=3, sticky="ew")
-        ttk.Button(
-            form,
-            text="Delete Selected",
-            style="Accent.TButton",
-            command=self.delete_image,
-        ).grid(row=8, column=0, columnspan=3, sticky="ew", pady=(8, 0))
-        form.columnconfigure(1, weight=1)
-
-        right = ttk.Frame(shell, style="App.TFrame")
-        right.pack(side="left", fill="both", expand=True)
-
-        table = ttk.LabelFrame(
-            right,
-            text="Medical Image Register",
-            style="Section.TLabelframe",
-            padding=12,
-        )
-        table.pack(fill="x", pady=(0, 10))
-
-        self.tree = self._make_tree(
-            table,
-            ("id", "patient", "type", "body", "date", "image"),
-        )
-        for column, heading, width in (
-            ("id", "Image ID", 110),
-            ("patient", "Patient", 100),
-            ("type", "Type", 120),
-            ("body", "Body Part", 140),
-            ("date", "Captured On", 120),
-            ("image", "Image", 220),
-        ):
-            self.tree.heading(column, text=heading)
-            self.tree.column(column, width=width, anchor="center")
-        self.tree.configure(height=7)
-        self.tree.bind("<<TreeviewSelect>>", self.on_select)
-
-        preview_frame = ttk.LabelFrame(
-            right,
-            text="Image Preview",
-            style="Section.TLabelframe",
-            padding=12,
-        )
-        preview_frame.pack(fill="both", expand=True)
-
-        self.preview_label = tk.Label(
-            preview_frame,
-            bg="white",
-            fg=MUTED,
-            text="No image selected",
-            font=("Segoe UI", 10),
-            width=64,
-            height=24,
-            relief="solid",
-            bd=1,
-            anchor="center",
-            justify="center",
-        )
-        self.preview_label.pack(fill="both", expand=True)
-        ttk.Label(
-            preview_frame,
-            textvariable=self.preview_caption_var,
-            style="SubHeader.TLabel",
-            wraplength=520,
-        ).pack(anchor="w", pady=(8, 0))
-
-    def browse_file(self):
-        selected_path = filedialog.askopenfilename(
-            title="Choose image file",
-            filetypes=(
-                ("Image files", "*.png *.jpg *.jpeg *.bmp *.gif *.tif *.tiff"),
-                ("All files", "*.*"),
-            ),
-        )
-        if selected_path:
-            self.file_path_var.set(str(Path(selected_path)))
-            self._update_preview(selected_path)
-
-    def add_image(self):
-        try:
-            image = medical_images.add_medical_image(
-                self._extract_identifier(self.patient_var.get()),
-                self.image_type_var.get(),
-                self.body_part_var.get(),
-                self.captured_on_var.get(),
-                self.file_path_var.get(),
-                self.app_frame.user["username"],
-                self.notes_var.get(),
-            )
-        except ValueError as exc:
-            self.show_error("Image not added", exc)
-            return
-
-        self.show_info("Medical image added", f'Created image record {image["image_id"]}.')
-        self._update_preview(image["file_path"])
-        self.image_id_var.set("")
-        self.notes_var.set("")
-        self.app_frame.refresh_all()
-
-    def delete_image(self):
-        image_id = self.image_id_var.get()
-        if not image_id:
-            self.show_error("Delete image", "Select an image first.")
-            return
-
-        try:
-            medical_images.delete_medical_image(image_id)
-        except ValueError as exc:
-            self.show_error("Image not deleted", exc)
-            return
-
-        self.image_id_var.set("")
-        self.file_path_var.set("")
-        self._clear_preview()
-        self.app_frame.refresh_all()
-
-    def on_select(self, _event):
-        selected = self.tree.selection()
-        if not selected:
-            return
-
-        image_id = self.tree.item(selected[0], "values")[0]
-        image_record = medical_images.get_medical_image(image_id)
-        patient_id = image_record["patient_id"]
-        self.image_id_var.set(image_id)
-        patient = ehr.get_patient(patient_id)
-        self.patient_var.set(
-            f'{patient_id} - {patient["first_name"]} {patient["last_name"]}'
-        )
-        self.image_type_var.set(image_record["image_type"])
-        self.body_part_var.set(image_record["body_part"])
-        self.captured_on_var.set(image_record["captured_on"])
-        self.file_path_var.set(image_record["file_path"])
-        self.notes_var.set(image_record.get("notes", ""))
-        self._update_preview(image_record["file_path"])
-
-    def refresh(self):
-        self.patient_choice.configure(values=self.app_frame.patient_options())
-        self.tree.delete(*self.tree.get_children())
-        for image in medical_images.list_medical_images():
-            self.tree.insert(
-                "",
-                "end",
-                values=(
-                    image["image_id"],
-                    image["patient_id"],
-                    image["image_type"],
-                    image["body_part"],
-                    image["captured_on"],
-                    Path(image["file_path"]).name if image["file_path"] else "No file",
-                ),
-            )
-
-    def _clear_preview(self, message="No image selected"):
-        self.preview_photo = None
-        self.preview_label.configure(image="", text=message)
-        self.preview_caption_var.set("Choose or select an image to preview it here.")
-
-    def _update_preview(self, file_path):
-        path = Path(file_path)
-
-        if not file_path or not path.exists():
-            self._clear_preview("Image file not found")
-            return
-
-        try:
-            photo = tk.PhotoImage(file=str(path))
-        except tk.TclError:
-            self.preview_photo = None
-            self.preview_label.configure(
-                image="",
-                text="Preview unavailable for this file type.\nUse PNG or GIF for built-in preview.",
-            )
-            self.preview_caption_var.set(str(path))
-            return
-
-        max_width = 900
-        max_height = 520
-        width = photo.width()
-        height = photo.height()
-        width_scale = max(1, (width + max_width - 1) // max_width)
-        height_scale = max(1, (height + max_height - 1) // max_height)
-        scale = max(width_scale, height_scale)
-
-        if scale > 1:
-            photo = photo.subsample(scale, scale)
-
-        self.preview_photo = photo
-        self.preview_label.configure(image=self.preview_photo, text="")
-        self.preview_caption_var.set(str(path))
 
 class RemindersTab(BaseTab):
     def __init__(self, master, app_frame):
         super().__init__(master, app_frame)
+
         shell = ttk.Frame(self, style="App.TFrame")
         shell.pack(fill="both", expand=True)
 
@@ -2291,158 +1206,150 @@ class RemindersTab(BaseTab):
         self.medication_var = tk.StringVar()
         self.dosage_var = tk.StringVar(value="1")
         self.frequency_var = tk.StringVar(value="60")
-        self.next_due_var = tk.StringVar(
-            value=(datetime.datetime.now() + datetime.timedelta(minutes=60)).strftime(
-                "%Y-%m-%d %H:%M"
-            )
-        )
+        self.next_due_var = tk.StringVar(value="60")
+        self.snooze_var = tk.StringVar(value="5")
         self.notes_var = tk.StringVar()
+
         number_validate = (self.register(self._validate_numeric_input), "%P")
 
         ttk.Label(form, text="Reminder ID", style="Panel.TLabel").grid(
-            row=0,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
+            row=0, column=0, sticky="w", pady=(0, 6)
         )
         ttk.Entry(
             form,
             textvariable=self.reminder_id_var,
-            state="readonly",
             width=28,
+            state="readonly",
         ).grid(row=0, column=1, sticky="ew", pady=(0, 8))
 
         ttk.Label(form, text="Patient", style="Panel.TLabel").grid(
-            row=1,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
+            row=1, column=0, sticky="w", pady=(0, 6)
         )
-        self.patient_choice = ttk.Combobox(form, textvariable=self.patient_var, width=26)
+        self.patient_choice = ttk.Combobox(
+            form,
+            textvariable=self.patient_var,
+            width=26,
+            state="readonly",
+        )
         self.patient_choice.grid(row=1, column=1, sticky="ew", pady=(0, 8))
+
         ttk.Label(form, text="Medication", style="Panel.TLabel").grid(
-            row=2,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
+            row=2, column=0, sticky="w", pady=(0, 6)
         )
         self.medication_choice = ttk.Combobox(
             form,
             textvariable=self.medication_var,
             width=26,
+            state="readonly",
         )
         self.medication_choice.grid(row=2, column=1, sticky="ew", pady=(0, 8))
 
-        for row, label, variable in (
-            (3, "Dosage", self.dosage_var),
-            (4, "Frequency (mins)", self.frequency_var),
-            (5, "Next Due", self.next_due_var),
-            (6, "Notes", self.notes_var),
+        for row, (label, variable) in enumerate(
+            (
+                ("Dosage", self.dosage_var),
+                ("Frequency (minutes)", self.frequency_var),
+                ("Next Due (min from now)", self.next_due_var),
+                ("Notes", self.notes_var),
+            ),
+            start=3,
         ):
             ttk.Label(form, text=label, style="Panel.TLabel").grid(
-                row=row,
-                column=0,
-                sticky="w",
-                pady=(0, 6),
+                row=row, column=0, sticky="w", pady=(0, 6)
             )
             entry = ttk.Entry(form, textvariable=variable, width=28)
-            if label in {"Dosage", "Frequency (mins)"}:
+            if label in {"Dosage", "Frequency (minutes)", "Next Due (min from now)"}:
                 entry.configure(validate="key", validatecommand=number_validate)
-            entry.grid(
-                row=row,
-                column=1,
-                sticky="ew",
-                pady=(0, 8),
-            )
+            entry.grid(row=row, column=1, sticky="ew", pady=(0, 8))
 
         ttk.Button(
             form,
             text="Add Reminder",
             style="App.TButton",
             command=self.add_reminder,
-        ).grid(row=7, column=0, columnspan=2, sticky="ew")
+        ).grid(row=7, column=0, columnspan=2, sticky="ew", pady=(6, 6))
         ttk.Button(
             form,
-            text="Administer Now",
+            text="Administer Reminder",
             style="Accent.TButton",
-            command=self.administer_selected_reminder,
-        ).grid(row=8, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+            command=self.administer_reminder,
+        ).grid(row=8, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        ttk.Label(form, text="Snooze (minutes)", style="Panel.TLabel").grid(
+            row=9, column=0, sticky="w", pady=(0, 6)
+        )
+        snooze_entry = ttk.Entry(form, textvariable=self.snooze_var, width=28)
+        snooze_entry.configure(validate="key", validatecommand=number_validate)
+        snooze_entry.grid(row=9, column=1, sticky="ew", pady=(0, 8))
         ttk.Button(
             form,
-            text="Later (5 mins)",
-            style="App.TButton",
-            command=self.snooze_selected_reminder,
-        ).grid(row=9, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+            text="Snooze Reminder",
+            style="Accent.TButton",
+            command=self.snooze_reminder,
+        ).grid(row=10, column=0, columnspan=2, sticky="ew", pady=(0, 6))
         ttk.Button(
             form,
             text="Toggle Active",
             style="Accent.TButton",
             command=self.toggle_reminder,
-        ).grid(row=10, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        ).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(0, 6))
         ttk.Button(
             form,
-            text="Delete Selected",
-            style="App.TButton",
+            text="Delete Reminder",
+            style="Accent.TButton",
             command=self.delete_reminder,
-        ).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-        form.columnconfigure(1, weight=1)
+        ).grid(row=12, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        ttk.Button(
+            form,
+            text="Clear Form",
+            style="Accent.TButton",
+            command=self.clear_form,
+        ).grid(row=13, column=0, columnspan=2, sticky="ew")
 
-        table = ttk.LabelFrame(
+        table_frame = ttk.LabelFrame(
             shell,
-            text="Reminder Schedule",
+            text="Reminder List",
             style="Section.TLabelframe",
             padding=12,
         )
-        table.pack(side="left", fill="both", expand=True)
-
+        table_frame.pack(side="left", fill="both", expand=True)
         self.tree = self._make_tree(
-            table,
-            (
-                "id",
-                "patient",
-                "medication",
-                "dosage",
-                "frequency",
-                "next_due",
-                "status",
-            ),
+            table_frame,
+            ("id", "patient", "medication", "dose", "frequency", "due", "active"),
         )
         for column, heading, width in (
-            ("id", "Reminder ID", 110),
-            ("patient", "Patient", 90),
-            ("medication", "Medication", 150),
-            ("dosage", "Dosage", 80),
-            ("frequency", "Every (mins)", 110),
-            ("next_due", "Next Due", 150),
-            ("status", "Status", 100),
+            ("id", "Reminder ID", 100),
+            ("patient", "Patient", 100),
+            ("medication", "Medication", 140),
+            ("dose", "Dose", 70),
+            ("frequency", "Every (min)", 90),
+            ("due", "Next Due", 150),
+            ("active", "Active", 80),
         ):
             self.tree.heading(column, text=heading)
             self.tree.column(column, width=width, anchor="center")
-
-        self.tree.tag_configure("due", background="#f7d9c9")
-        self.tree.bind("<<TreeviewSelect>>", self.on_select)
+        self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
     def add_reminder(self):
         try:
             reminder = medication_reminders.add_reminder(
-                self._extract_identifier(self.patient_var.get()),
-                self._extract_identifier(self.medication_var.get()),
-                int(self.dosage_var.get()),
-                int(self.frequency_var.get()),
-                self.next_due_var.get(),
-                self.notes_var.get(),
+                patient_id=self._extract_identifier(self.patient_var.get()),
+                medication_id=self._extract_identifier(self.medication_var.get()),
+                dosage=int(self.dosage_var.get()),
+                frequency_minutes=int(self.frequency_var.get()),
+                next_due=self.next_due_var.get(),
+                notes=self.notes_var.get(),
             )
-        except (ValueError, TypeError) as exc:
+        except (TypeError, ValueError) as exc:
             self.show_error("Reminder not added", exc)
             return
 
-        self.show_info("Reminder added", f'Created reminder {reminder["reminder_id"]}.')
+        self.show_info("Reminder added", f'Reminder {reminder["reminder_id"]} was added.')
+        self.clear_form()
         self.app_frame.refresh_all()
 
-    def administer_selected_reminder(self):
-        reminder_id = self.reminder_id_var.get()
+    def administer_reminder(self):
+        reminder_id = self.reminder_id_var.get().strip()
         if not reminder_id:
-            self.show_error("Administer reminder", "Select a reminder first.")
+            self.show_error("No reminder selected", "Select a reminder to administer.")
             return
 
         try:
@@ -2451,40 +1358,53 @@ class RemindersTab(BaseTab):
             self.show_error("Reminder not administered", exc)
             return
 
+        self.show_info("Reminder administered", f"Reminder {reminder_id} was administered.")
         self.app_frame.refresh_all()
 
-    def snooze_selected_reminder(self):
-        reminder_id = self.reminder_id_var.get()
+    def snooze_reminder(self):
+        reminder_id = self.reminder_id_var.get().strip()
         if not reminder_id:
-            self.show_error("Snooze reminder", "Select a reminder first.")
+            self.show_error("No reminder selected", "Select a reminder to snooze.")
             return
 
         try:
-            medication_reminders.snooze_reminder(reminder_id, 5)
-        except ValueError as exc:
+            delay_text = self.snooze_var.get().strip()
+            delay_minutes = int(delay_text) if delay_text else medication_reminders.DEFAULT_SNOOZE_MINUTES
+            medication_reminders.snooze_reminder(reminder_id, delay_minutes)
+        except (TypeError, ValueError) as exc:
             self.show_error("Reminder not snoozed", exc)
             return
 
+        self.show_info("Reminder snoozed", f"Reminder {reminder_id} was snoozed.")
         self.app_frame.refresh_all()
 
     def toggle_reminder(self):
-        reminder_id = self.reminder_id_var.get()
+        reminder_id = self.reminder_id_var.get().strip()
         if not reminder_id:
-            self.show_error("Toggle reminder", "Select a reminder first.")
+            self.show_error("No reminder selected", "Select a reminder to toggle.")
             return
 
         try:
-            medication_reminders.toggle_reminder(reminder_id)
+            reminder = medication_reminders.toggle_reminder(reminder_id)
         except ValueError as exc:
             self.show_error("Reminder not updated", exc)
             return
 
+        state = "active" if reminder.get("active", True) else "paused"
+        self.show_info("Reminder updated", f"Reminder {reminder_id} is now {state}.")
         self.app_frame.refresh_all()
 
     def delete_reminder(self):
-        reminder_id = self.reminder_id_var.get()
+        reminder_id = self.reminder_id_var.get().strip()
         if not reminder_id:
-            self.show_error("Delete reminder", "Select a reminder first.")
+            self.show_error("No reminder selected", "Select a reminder to delete.")
+            return
+
+        if not messagebox.askyesno(
+            "Delete reminder",
+            f"Delete reminder {reminder_id}?",
+            parent=self,
+        ):
             return
 
         try:
@@ -2493,49 +1413,54 @@ class RemindersTab(BaseTab):
             self.show_error("Reminder not deleted", exc)
             return
 
-        self.reminder_id_var.set("")
+        self.show_info("Reminder deleted", f"Reminder {reminder_id} was deleted.")
+        self.clear_form()
         self.app_frame.refresh_all()
 
-    def on_select(self, _event):
+    def clear_form(self):
+        self.reminder_id_var.set("")
+        self.patient_var.set("")
+        self.medication_var.set("")
+        self.dosage_var.set("1")
+        self.frequency_var.set("60")
+        self.next_due_var.set("60")
+        self.snooze_var.set("5")
+        self.notes_var.set("")
+
+    def _on_tree_select(self, _event):
         selected = self.tree.selection()
         if not selected:
             return
 
-        values = self.tree.item(selected[0], "values")
-        reminder_id, patient_id, medication_name, dosage, frequency, next_due, _status = (
-            values
-        )
-        self.reminder_id_var.set(reminder_id)
-        patient = ehr.get_patient(patient_id)
-        self.patient_var.set(
-            f'{patient_id} - {patient["first_name"]} {patient["last_name"]}'
-        )
-        matched_medication = next(
-            (
-                option
-                for option in self.app_frame.medication_options()
-                if option.endswith(f" - {medication_name}")
-            ),
-            "",
-        )
-        self.medication_var.set(matched_medication)
-        self.dosage_var.set(str(dosage))
-        self.frequency_var.set(str(frequency))
-        self.next_due_var.set(next_due)
+        reminder_id = self.tree.item(selected[0], "values")[0]
+        reminder = medication_reminders.get_reminder(reminder_id)
+        self.reminder_id_var.set(reminder["reminder_id"])
+        self.patient_var.set(self._choice_for_patient(reminder["patient_id"]))
+        self.medication_var.set(self._choice_for_medication(reminder["medication_id"]))
+        self.dosage_var.set(str(reminder["dosage"]))
+        self.frequency_var.set(str(reminder["frequency_minutes"]))
+        self.next_due_var.set("")
+        self.snooze_var.set("5")
+        self.notes_var.set(reminder.get("notes", ""))
+
+    def _choice_for_patient(self, patient_id):
+        for option in self.app_frame.patient_options():
+            if option.startswith(f"{patient_id} - "):
+                return option
+        return patient_id
+
+    def _choice_for_medication(self, medication_id):
+        for option in self.app_frame.medication_options():
+            if option.startswith(f"{medication_id} - "):
+                return option
+        return medication_id
 
     def refresh(self):
         self.patient_choice.configure(values=self.app_frame.patient_options())
         self.medication_choice.configure(values=self.app_frame.medication_options())
-        now = datetime.datetime.now()
 
         self.tree.delete(*self.tree.get_children())
         for reminder in medication_reminders.list_reminders():
-            next_due = datetime.datetime.strptime(
-                reminder["next_due"],
-                "%Y-%m-%d %H:%M",
-            )
-            is_due = reminder.get("active", True) and next_due <= now
-            status = "Active" if reminder.get("active", True) else "Paused"
             self.tree.insert(
                 "",
                 "end",
@@ -2546,7 +1471,6 @@ class RemindersTab(BaseTab):
                     reminder["dosage"],
                     reminder["frequency_minutes"],
                     reminder["next_due"],
-                    status,
+                    "Yes" if reminder.get("active", True) else "No",
                 ),
-                tags=("due",) if is_due else (),
             )

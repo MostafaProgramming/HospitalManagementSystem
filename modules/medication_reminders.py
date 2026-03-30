@@ -1,4 +1,5 @@
 import datetime
+from zoneinfo import ZoneInfo
 
 from modules.medication_stock import administer_medication, validate_dosage
 from utils.id_generator import assign_reminder_id
@@ -6,8 +7,11 @@ from utils.json_storage import load_data, save_data
 
 
 # This file manages repeat medication reminders.
+APP_TIMEZONE = ZoneInfo("Europe/London")
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 DEFAULT_SNOOZE_MINUTES = 5
+MAX_NEXT_DUE_MINUTES = 60
+MAX_DELAY_MINUTES = 30
 
 
 def _load_reminders():
@@ -22,35 +26,39 @@ def _save_reminders(reminders):
 
 def _parse_datetime(value):
     # Convert saved reminder date text into a datetime object.
-    return datetime.datetime.strptime(value.strip(), DATETIME_FORMAT)
+    return datetime.datetime.strptime(value.strip(), DATETIME_FORMAT).replace(
+        tzinfo=APP_TIMEZONE
+    )
 
 
-def _get_frequency_minutes(reminder):
-    # Supports both the newer minute format and the older hour format.
-    if "frequency_minutes" in reminder:
-        return int(reminder["frequency_minutes"])
+def _parse_next_due_input(value):
+    # The GUI now captures the first due time as minutes from now.
+    cleaned = value.strip()
 
-    if "frequency_hours" in reminder:
-        return int(reminder["frequency_hours"]) * 60
+    if not cleaned:
+        raise ValueError("Next due is required.")
 
-    return 0
+    if not cleaned.isdigit():
+        raise ValueError("Next due must be entered in minutes only.")
 
+    minutes = int(cleaned)
 
-def _normalise_reminder(reminder):
-    # Return reminders in one consistent format for the GUI to display.
-    reminder_copy = dict(reminder)
-    reminder_copy["frequency_minutes"] = _get_frequency_minutes(reminder)
-    reminder_copy.pop("frequency_hours", None)
-    return reminder_copy
+    if minutes <= 0:
+        raise ValueError("Next due must be greater than 0 minutes.")
+
+    if minutes > MAX_NEXT_DUE_MINUTES:
+        raise ValueError("Next due cannot be more than 60 minutes from now.")
+
+    return datetime.datetime.now(APP_TIMEZONE) + datetime.timedelta(minutes=minutes)
 
 
 def list_reminders(due_only=False):
     # Return all reminders, or only the ones that are currently due.
     reminders = _load_reminders()
-    items = [_normalise_reminder(reminder) for reminder in reminders.values()]
+    items = [dict(reminder) for reminder in reminders.values()]
 
     if due_only:
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(APP_TIMEZONE)
         items = [
             reminder
             for reminder in items
@@ -69,7 +77,7 @@ def get_reminder(reminder_id):
     if reminder_id not in reminders:
         raise ValueError("Reminder not found.")
 
-    return _normalise_reminder(reminders[reminder_id])
+    return dict(reminders[reminder_id])
 
 
 def add_reminder(patient_id, medication_id, dosage, frequency_minutes, next_due, notes=""):
@@ -89,7 +97,7 @@ def add_reminder(patient_id, medication_id, dosage, frequency_minutes, next_due,
     if frequency_minutes <= 0:
         raise ValueError("Frequency must be greater than 0 minutes.")
 
-    next_due_dt = _parse_datetime(next_due)
+    next_due_dt = _parse_next_due_input(next_due)
     reminder_id = assign_reminder_id(reminders)
 
     reminder = {
@@ -106,7 +114,7 @@ def add_reminder(patient_id, medication_id, dosage, frequency_minutes, next_due,
 
     reminders[reminder_id] = reminder
     _save_reminders(reminders)
-    return _normalise_reminder(reminder)
+    return dict(reminder)
 
 
 def administer_reminder(reminder_id):
@@ -117,8 +125,19 @@ def administer_reminder(reminder_id):
         raise ValueError("Reminder not found.")
 
     reminder = reminders[reminder_id]
-    frequency_minutes = _get_frequency_minutes(reminder)
-    administered_at = datetime.datetime.now()
+    if not reminder.get("active", True):
+        raise ValueError("Reminder is not active.")
+
+    next_due_dt = _parse_datetime(reminder["next_due"])
+    now = datetime.datetime.now(APP_TIMEZONE)
+
+    if next_due_dt > now:
+        raise ValueError(
+            f'Reminder is not due yet. Next due time is {reminder["next_due"]}.'
+        )
+
+    frequency_minutes = int(reminder["frequency_minutes"])
+    administered_at = now
 
     medication, patient = administer_medication(
         reminder["medication_id"],
@@ -135,7 +154,7 @@ def administer_reminder(reminder_id):
 
     reminders[reminder_id] = reminder
     _save_reminders(reminders)
-    return _normalise_reminder(reminder), medication, patient
+    return dict(reminder), medication, patient
 
 
 def mark_reminder_completed(reminder_id):
@@ -154,13 +173,18 @@ def snooze_reminder(reminder_id, delay_minutes=DEFAULT_SNOOZE_MINUTES):
     if delay_minutes <= 0:
         raise ValueError("Snooze delay must be greater than 0 minutes.")
 
+    if delay_minutes > MAX_DELAY_MINUTES:
+        raise ValueError(
+            f"Snooze delay cannot be more than {MAX_DELAY_MINUTES} minutes."
+        )
+
     reminder = reminders[reminder_id]
     reminder["next_due"] = (
-        datetime.datetime.now() + datetime.timedelta(minutes=delay_minutes)
+        datetime.datetime.now(APP_TIMEZONE) + datetime.timedelta(minutes=delay_minutes)
     ).strftime(DATETIME_FORMAT)
     reminders[reminder_id] = reminder
     _save_reminders(reminders)
-    return _normalise_reminder(reminder)
+    return dict(reminder)
 
 
 def toggle_reminder(reminder_id):
@@ -174,7 +198,7 @@ def toggle_reminder(reminder_id):
     reminder["active"] = not reminder.get("active", True)
     reminders[reminder_id] = reminder
     _save_reminders(reminders)
-    return _normalise_reminder(reminder)
+    return dict(reminder)
 
 
 def delete_reminder(reminder_id):
@@ -186,4 +210,4 @@ def delete_reminder(reminder_id):
 
     reminder = reminders.pop(reminder_id)
     _save_reminders(reminders)
-    return _normalise_reminder(reminder)
+    return dict(reminder)

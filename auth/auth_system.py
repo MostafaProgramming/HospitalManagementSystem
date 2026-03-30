@@ -16,48 +16,45 @@ current_session = None
 sessions = {}
 
 
+# This function reads all saved users from the JSON file.
 def _load_users():
-    # Read all saved users from the JSON file.
     return load_data("data/users.json")
 
 
+# This function saves the changed users back to the JSON file.
 def _save_users(users):
-    # Save the changed users back to the JSON file.
     save_data("data/users.json", users)
 
 
+# This function reads the system settings such as the signup key.
 def _load_config():
-    # Read system settings such as the signup key.
     return load_data("data/config.json")
 
-
+# This function saves the changed settings back to the JSON file.
 def _save_config(config):
-    # Save changed settings back to the JSON file.
     save_data("data/config.json", config)
 
-
+# This function matches the usernames without caring about upper/lower case characters.
 def _find_username(users, username):
-    # Match usernames without caring about upper/lower case.
     lowered = username.strip().lower()
     for existing_username in users:
         if existing_username.lower() == lowered:
             return existing_username
     return None
 
-
+# This function tells us whether this is the first account in the system.
 def has_users():
-    # Used to tell whether this is the first account in the system.
     return len(_load_users()) > 0
 
 
+# This function returns all of the users in alphabetical order for staff dropdowns and selections.
 def list_users():
-    # Return users in alphabetical order for staff dropdowns and tables.
     users = _load_users()
     return sorted(users.values(), key=lambda user: user["username"].lower())
 
 
+# This function creates a new staff account after checking and ensuring that the input is valid.
 def register_user(role, username, password, signup_key=None):
-    # Create a new staff account after checking the input is valid.
     users = _load_users()
     config = _load_config()
 
@@ -78,10 +75,10 @@ def register_user(role, username, password, signup_key=None):
         raise ValueError("Password must be at least 8 characters long.")
 
     if users:
-        configured_key = config.get("signup_key", "").strip()
-        if not configured_key:
-            raise ValueError("No signup key is configured.")
-        if signup_key != configured_key:
+        created_key = config.get("signup_key", "").strip()
+        if not created_key:
+            raise ValueError("No signup key is created.")
+        if signup_key != created_key:
             raise ValueError("The signup key is incorrect.")
     else:
         if not signup_key:
@@ -89,10 +86,11 @@ def register_user(role, username, password, signup_key=None):
         config["signup_key"] = signup_key
         _save_config(config)
 
-    # A random salt is added so that matching passwords do not produce matching hashes.
+    # This adds a random salt to the password before hashing it.
     salt = "".join(random.choices(string.ascii_letters + string.digits, k=8))
     user_id = assign_user_id(users)
 
+    # This saves the user with the hashed password and salt, so the real password is never stored.
     users[username] = {
         "userID": user_id,
         "username": username,
@@ -108,8 +106,8 @@ def register_user(role, username, password, signup_key=None):
     return users[username]
 
 
+# This function checks login details and marks the matched user as the active session.
 def authenticate_user(username, password):
-    # Check login details and mark the matched user as the active session.
     global current_session
     global current_user
 

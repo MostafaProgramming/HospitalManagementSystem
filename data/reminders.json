@@ -1,26 +1,24 @@
 {
+    "REM001": {
+        "reminder_id": "REM001",
+        "patient_id": "P001",
+        "medication_id": "M005",
+        "medication_name": "Paracetomol",
+        "dosage": 7,
+        "frequency_minutes": 60,
+        "next_due": "2026-03-31 00:14",
+        "notes": "",
+        "active": true
+    },
     "REM002": {
         "reminder_id": "REM002",
-        "patient_id": "P005",
-        "medication_id": "M005",
-        "medication_name": "Paracetomol",
-        "dosage": 10,
-        "frequency_minutes": 2,
-        "next_due": "2026-03-24 21:27",
+        "patient_id": "P002",
+        "medication_id": "M004",
+        "medication_name": "g",
+        "dosage": 7,
+        "frequency_minutes": 8,
+        "next_due": "2026-03-30 23:58",
         "notes": "",
-        "active": false,
-        "last_administered_at": "2026-03-24 20:59"
-    },
-    "REM003": {
-        "reminder_id": "REM003",
-        "patient_id": "P005",
-        "medication_id": "M005",
-        "medication_name": "Paracetomol",
-        "dosage": 5,
-        "frequency_minutes": 2,
-        "next_due": "2026-03-24 21:27",
-        "notes": "",
-        "active": false,
-        "last_administered_at": "2026-03-24 20:55"
+        "active": true
     }
 }

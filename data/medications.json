@@ -6,7 +6,8 @@
         "description": "t",
         "maxStock": 45,
         "reorderLevel": 33,
-        "currentQty": 45
+        "currentQty": 45,
+        "updated_at": "2026-03-23 17:43:42.265546"
     },
     "M002": {
         "id": "M002",
@@ -15,16 +16,8 @@
         "description": "q",
         "maxStock": 56,
         "reorderLevel": 45,
-        "currentQty": 51
-    },
-    "M003": {
-        "id": "M003",
-        "name": "n",
-        "category": "n",
-        "description": "n",
-        "maxStock": 55,
-        "reorderLevel": 44,
-        "currentQty": 55
+        "currentQty": 56,
+        "updated_at": "2026-03-23 16:13:26.560111"
     },
     "M004": {
         "id": "M004",
@@ -33,6 +26,27 @@
         "description": "g",
         "maxStock": 77,
         "reorderLevel": 66,
-        "currentQty": 77
+        "currentQty": 71,
+        "updated_at": "2026-03-24 22:18:32.105260"
+    },
+    "M005": {
+        "id": "M005",
+        "name": "Paracetomol",
+        "category": "Painkiller",
+        "description": "kills the pain",
+        "maxStock": 100,
+        "reorderLevel": 75,
+        "currentQty": 90,
+        "updated_at": "2026-03-28 09:59:27.421980"
+    },
+    "M006": {
+        "id": "M006",
+        "name": "Penicillin",
+        "category": "G",
+        "description": "g",
+        "maxStock": 90,
+        "reorderLevel": 45,
+        "currentQty": 67,
+        "updated_at": "2026-03-26 20:06:05.432410"
     }
 }
