@@ -2,14 +2,10 @@ import re
 
 
 # These counters are only used if there is no saved data to inspect yet.
-current_user_id = 1
-current_session_id = 1
-current_patient_id = 1
-current_medication_id = 1
-current_room_id = 1
-current_booking_id = 1
-current_availability_id = 1
-current_image_id = 1
+current_user_id = 1             
+current_session_id = 1    
+current_patient_id = 1     
+current_medication_id = 1    
 current_reminder_id = 1
 
 
@@ -79,36 +75,8 @@ def assign_medication_id(records=None):
     return _assign_from_counter("M", "current_medication_id")
 
 
-def assign_room_id(records=None):
+def assign_reminder_id(records=None):
     generated = generate_prefixed_id("R", records)
     if generated:
         return generated
-    return _assign_from_counter("R", "current_room_id")
-
-
-def assign_booking_id(records=None):
-    generated = generate_prefixed_id("B", records)
-    if generated:
-        return generated
-    return _assign_from_counter("B", "current_booking_id")
-
-
-def assign_availability_id(records=None):
-    generated = generate_prefixed_id("A", records)
-    if generated:
-        return generated
-    return _assign_from_counter("A", "current_availability_id")
-
-
-def assign_image_id(records=None):
-    generated = generate_prefixed_id("IMG", records)
-    if generated:
-        return generated
-    return _assign_from_counter("IMG", "current_image_id")
-
-
-def assign_reminder_id(records=None):
-    generated = generate_prefixed_id("REM", records)
-    if generated:
-        return generated
-    return _assign_from_counter("REM", "current_reminder_id")
+    return _assign_from_counter("R", "current_reminder_id")

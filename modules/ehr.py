@@ -30,6 +30,43 @@ def _contains_digits(value):
     return any(character.isdigit() for character in value)
 
 
+def _normalise_patient_payload(first_name, last_name, email, phone, dob, condition, medication, notes):
+    # Build one consistent version of the entered patient data for saving and comparison.
+    return {
+        "first_name": first_name.strip().title(),
+        "last_name": last_name.strip().title(),
+        "email": email.strip().lower(),
+        "phone": phone.strip(),
+        "dob": dob.strip(),
+        "condition": condition.strip().lower(),
+        "medication": medication.strip().lower(),
+        "notes": notes.strip(),
+    }
+
+
+def _find_duplicate_patient(patients, patient_data, excluded_patient_id=None):
+    # Stop users from saving the same patient details more than once.
+    for existing_patient_id, patient in patients.items():
+        if existing_patient_id == excluded_patient_id:
+            continue
+
+        existing_patient_data = _normalise_patient_payload(
+            patient.get("first_name", ""),
+            patient.get("last_name", ""),
+            patient.get("email", ""),
+            patient.get("phone", ""),
+            patient.get("dob", ""),
+            patient.get("condition", ""),
+            patient.get("medication", ""),
+            patient.get("notes", ""),
+        )
+
+        if existing_patient_data == patient_data:
+            return existing_patient_id
+
+    return None
+
+
 def _validate_patient_fields(first_name, last_name, email, phone, dob, condition, medication, notes):
     # Check that the patient form has sensible and safe input values.
     if not first_name.strip():
@@ -113,19 +150,26 @@ def add_patient(first_name, last_name, email, phone, dob, condition, medication,
     )
 
     patients = _load_patients()
+    patient_details = _normalise_patient_payload(
+        first_name,
+        last_name,
+        email,
+        phone,
+        dob,
+        condition,
+        medication,
+        notes,
+    )
+    duplicate_patient_id = _find_duplicate_patient(patients, patient_details)
+    if duplicate_patient_id:
+        raise ValueError(f"An identical patient record already exists ({duplicate_patient_id}).")
+
     patient_id = assign_patient_id(patients)
     timestamp = str(datetime.datetime.now())
 
     patient_data = {
         "patient_id": patient_id,
-        "first_name": first_name.strip().title(),
-        "last_name": last_name.strip().title(),
-        "email": email.strip(),
-        "phone": phone.strip(),
-        "dob": dob.strip(),
-        "condition": condition.strip(),
-        "medication": medication.strip(),
-        "notes": notes.strip(),
+        **patient_details,
         "created_at": timestamp,
         "updated_at": timestamp,
     }
@@ -150,18 +194,28 @@ def update_patient(patient_id, first_name, last_name, email, phone, dob, conditi
 
     patients = _load_patients()
     _ensure_patient_exists(patients, patient_id)
+    patient_details = _normalise_patient_payload(
+        first_name,
+        last_name,
+        email,
+        phone,
+        dob,
+        condition,
+        medication,
+        notes,
+    )
+    duplicate_patient_id = _find_duplicate_patient(
+        patients,
+        patient_details,
+        excluded_patient_id=patient_id,
+    )
+    if duplicate_patient_id:
+        raise ValueError(f"These details already match patient {duplicate_patient_id}.")
 
     patient = patients[patient_id]
     patient.update(
         {
-            "first_name": first_name.strip().title(),
-            "last_name": last_name.strip().title(),
-            "email": email.strip(),
-            "phone": phone.strip(),
-            "dob": dob.strip(),
-            "condition": condition.strip(),
-            "medication": medication.strip(),
-            "notes": notes.strip(),
+            **patient_details,
             "updated_at": str(datetime.datetime.now()),
         }
     )

@@ -42,6 +42,28 @@ def _find_username(users, username):
             return existing_username
     return None
 
+
+def _match_password(user, password):
+    stored_hash = user.get("password_hash", "")
+    salt = user.get("salt", "")
+
+    # Try the entered password first, then a trimmed version to be more forgiving
+    # of accidental spaces typed into the GUI field.
+    candidates = [password]
+    trimmed_password = password.strip()
+    if trimmed_password != password:
+        candidates.append(trimmed_password)
+
+    for candidate in candidates:
+        if salt and hash_password(candidate + salt) == stored_hash:
+            return candidate, False
+
+        # Support older unsalted hashes and migrate them on the next successful login.
+        if hash_password(candidate) == stored_hash:
+            return candidate, True
+
+    return None, False
+
 # This function tells us whether this is the first account in the system.
 def has_users():
     return len(_load_users()) > 0
@@ -118,11 +140,15 @@ def authenticate_user(username, password):
         raise ValueError("Username not found.")
 
     user = users[matched_username]
-    # The entered password is hashed with the saved salt before comparison.
-    test_hash = hash_password(password + user["salt"])
+    matched_password, needs_upgrade = _match_password(user, password)
 
-    if test_hash != user["password_hash"]:
+    if matched_password is None:
         raise ValueError("Incorrect password.")
+
+    if needs_upgrade:
+        salt = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+        user["salt"] = salt
+        user["password_hash"] = hash_password(matched_password + salt)
 
     for existing_username, record in users.items():
         record["active"] = existing_username == matched_username

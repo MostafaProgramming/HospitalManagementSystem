@@ -7,22 +7,86 @@
         "phone": "849830581",
         "dob": "1996-03-30",
         "condition": "arthritis",
-        "medication": "arthritis pills",
+        "medication": "Paracetomol",
         "notes": "",
         "created_at": "2026-03-30 23:40:53.063444",
-        "updated_at": "2026-03-30 23:40:53.063444"
+        "updated_at": "2026-03-31 11:53:17.663101",
+        "medications": [
+            {
+                "medication_id": "M005",
+                "medication_name": "Paracetomol",
+                "dosage": 7,
+                "administered_at": "2026-03-31 11:53:17.663101"
+            }
+        ]
     },
     "P002": {
         "patient_id": "P002",
-        "first_name": "Jack",
+        "first_name": "Daniel",
         "last_name": "Stevens",
-        "email": "Jackstevs@gmail.com",
-        "phone": "7543879",
+        "email": "jackstevs@gmail.com",
+        "phone": "0123456",
         "dob": "2006-05-28",
-        "condition": "back pain",
-        "medication": "back pain pills",
+        "condition": "alzhiemers",
+        "medication": "Panadol",
         "notes": "",
         "created_at": "2026-03-30 23:42:51.418923",
-        "updated_at": "2026-03-30 23:42:51.418923"
+        "updated_at": "2026-04-01 22:30:00.696317",
+        "medications": [
+            {
+                "medication_id": "M004",
+                "medication_name": "g",
+                "dosage": 7,
+                "administered_at": "2026-03-31 11:53:17.086346"
+            },
+            {
+                "medication_id": "M004",
+                "medication_name": "g",
+                "dosage": 7,
+                "administered_at": "2026-03-31 12:26:26.634940"
+            },
+            {
+                "medication_id": "M004",
+                "medication_name": "g",
+                "dosage": 7,
+                "administered_at": "2026-03-31 12:46:26.079347"
+            },
+            {
+                "medication_id": "M005",
+                "medication_name": "Paracetomol",
+                "dosage": 7,
+                "administered_at": "2026-04-01 16:42:43.898533"
+            },
+            {
+                "medication_id": "M007",
+                "medication_name": "G",
+                "dosage": 8,
+                "administered_at": "2026-04-01 20:48:41.339032"
+            },
+            {
+                "medication_id": "M008",
+                "medication_name": "Panadol",
+                "dosage": 10,
+                "administered_at": "2026-04-01 20:56:32.666899"
+            },
+            {
+                "medication_id": "M008",
+                "medication_name": "Panadol",
+                "dosage": 10,
+                "administered_at": "2026-04-01 20:56:38.456848"
+            },
+            {
+                "medication_id": "M007",
+                "medication_name": "G",
+                "dosage": 10,
+                "administered_at": "2026-04-01 20:59:20.588767"
+            },
+            {
+                "medication_id": "M008",
+                "medication_name": "Panadol",
+                "dosage": 5,
+                "administered_at": "2026-04-01 22:30:00.696317"
+            }
+        ]
     }
 }
